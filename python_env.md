@@ -20,9 +20,9 @@
 
 実際に，講義で使用するライブラリをインストールするために，Python 3.7を使った仮想環境を作成します．以下のコマンドをそのまま実行してください．
 ```bash
-(base) C:\Users\ユーザ名> conda create -n pbl -c conda-forge python=3.7 opencv=4.0.1 dlib=19.22.0 matplotlib=3.5.3
+(base) C:\Users\ユーザ名> conda create -n pbl -c conda-forge python=3.7 opencv=4.0.1 dlib=19.22.0 matplotlib=3.5.3 notebook ipykernrl
 ```
-このコマンドは，"pbl"という仮想環境を作成し，conda-forgeから必要なライブラリ（opencv, dlib, matplotlib）を指定のバージョンでインストールします．
+このコマンドは，"pbl"という仮想環境を作成し，conda-forgeから必要なライブラリ（opencv, dlib, matplotlib, jupyter notebook, ipykernel）を指定のバージョンでインストールします．
 
 ## 仮想環境の切り替え
 
@@ -36,9 +36,4 @@
 ```bash
 (pbl) C:\Users\ユーザ名> conda deactivate
 (base) C:\Users\ユーザ名>
-```
-
-作成した仮想環境にJupyter Notebookとipykernelをインストールします．
-```bash
-(pbl) C:\Users\ユーザ名> conda install -c conda-forge notebook ipykernel
 ```
