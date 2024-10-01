@@ -39,7 +39,7 @@ conda env create -f conda_environment.yml
 
 ## 仮想環境の切り替え
 
-作成した仮想環境に切り替えるには以下を実行します．`(base)`が仮想環境`pbl`に変化することが確認できます．
+作成した仮想環境に切り替えるには以下を実行します．`(base)`が仮想環境`(pbl)`に変化することが確認できます．
 ```bash
 (base) C:\Users\ユーザ名> conda activate pbl
 (pbl) C:\Users\ユーザ名>
