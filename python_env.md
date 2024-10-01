@@ -11,6 +11,7 @@
 
 ## conda仮想環境の構築(Pythonバージョンを3.7に設定)
 
+### 方法1:コマンドによる仮想環境の作成
 これは，Anacondaを使った仮想環境を作成するコマンドのテンプレートです．
 ```bash
 (base) C:\Users\ユーザ名> conda create -n env-name -c channel-name python=3.7
@@ -23,6 +24,18 @@
 (base) C:\Users\ユーザ名> conda create -n pbl -c conda-forge python=3.7 opencv=4.0.1 dlib=19.22.0 matplotlib=3.5.3 pandas notebook ipykernel
 ```
 このコマンドは，"pbl"という仮想環境を作成し，conda-forgeから必要なライブラリ（opencv, dlib, matplotlib, pandas, jupyter notebook, ipykernel）を指定のバージョンでインストールします．
+
+### 方法2:`conda_environment.yml`ファイルを使った仮想環境の作成
+
+GitHub(このレポジトリ)に公開されている`conda_environment.yml`ファイルを使って仮想環境を作成する方法です．以下の手順で進めてください．
+```bash
+(base) C:\Users\ユーザ名> curl -O https://raw.githubusercontent.com/meruemon/PBL/refs/heads/main/conda_environment.yml
+```
+
+ダウンロードした`conda_environment.yml`ファイルを使って仮想環境を作成します．
+```bash
+(base) C:\Users\ユーザ名> conda env create --name pbl -f conda_environment.yml
+```
 
 ## 仮想環境の切り替え
 
