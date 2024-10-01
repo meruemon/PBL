@@ -25,9 +25,9 @@
 ```
 このコマンドは，"pbl"という仮想環境を作成し，conda-forgeから必要なライブラリ（opencv, dlib, matplotlib, pandas, jupyter notebook, ipykernel）を指定のバージョンでインストールします．
 
-### 方法2:`conda_environment.yml`ファイルを使った仮想環境の作成
+### 方法2:conda_environment.ymlファイルを使った仮想環境の作成
 
-GitHub(このレポジトリ)に公開されている`conda_environment.yml`ファイルを使って仮想環境を作成する方法です．以下の手順で進めてください．
+GitHub(このレポジトリ)に公開されている[`conda_environment.yml`](conda_environment.yml)ファイルを使って仮想環境を作成する方法です．以下の手順で進めてください．
 ```bash
 (base) C:\Users\ユーザ名> curl -O https://raw.githubusercontent.com/meruemon/PBL/refs/heads/main/conda_environment.yml
 ```
