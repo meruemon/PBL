@@ -34,7 +34,7 @@ GitHub(このレポジトリ)に公開されている[`conda_environment.yml`](c
 
 ダウンロードした`conda_environment.yml`ファイルを使って仮想環境を作成します．
 ```bash
-(base) C:\Users\ユーザ名> conda env create --name pbl -f conda_environment.yml
+(base) C:\Users\ユーザ名> conda env create -f conda_environment.yml
 ```
 
 ## 仮想環境の切り替え
