@@ -61,12 +61,18 @@ dependencies:
   - libwebp=1.0.2
   - libxml2=2.12.7
   - libzlib=1.2.13
+  - m2w64-gcc-libgfortran=5.3.0
+  - m2w64-gcc-libs=5.3.0
+  - m2w64-gcc-libs-core=5.3.0
+  - m2w64-gmp=6.1.0
+  - m2w64-libwinpthread-git=5.0.0.4634.697f757
   - markupsafe=2.1.1
   - matplotlib=3.5.3
   - matplotlib-base=3.5.3
   - matplotlib-inline=0.1.7
   - mistune=3.0.2
   - mkl=2024.1.0
+  - msys2-conda-epoch=20160418
   - munkres=1.1.4
   - nbclassic=1.1.0
   - nbclient=0.7.0
@@ -106,6 +112,8 @@ dependencies:
   - pywinpty=2.0.8
   - pyzmq=24.0.1
   - qt=5.6.2
+  - ruptures=1.1.7
+  - scipy=1.7.3
   - send2trash=1.8.3
   - setuptools=59.8.0
   - sip=4.18.1
@@ -136,4 +144,3 @@ dependencies:
   - zipp=3.15.0
   - zlib=1.2.13
   - zstd=1.5.6
-prefix: C:\Users\merue\anaconda3\envs\pbl
