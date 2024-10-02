@@ -46,7 +46,7 @@ conda env create -f conda_environment.yml
 (pbl) C:\Users\ユーザ名>
 ```
 
-仮想環境から抜けて(base)に戻る場合は以下を実行します．
+仮想環境から抜けて`base`に戻る場合は以下を実行します．
 ```bash
 (pbl) C:\Users\ユーザ名> conda deactivate
 (base) C:\Users\ユーザ名>
