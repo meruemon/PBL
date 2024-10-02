@@ -65,7 +65,7 @@ conda env create -f conda_environment.yml
 (base) C:\Users\ユーザ名>
 ```
 
-## 仮想環境に追加ライブラリをインストール
+## 仮想環境に追加モジュールをインストール
 
 仮想環境`pbl`に切り替えて，`pip`コマンドでchnagefinderをインストールします．
 ```bash
