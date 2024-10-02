@@ -21,18 +21,19 @@ conda create -n env-name -c channel-name python=3.7
 
 実際に，演習で使用するライブラリをインストールするために，Python 3.7を使った仮想環境を作成します．以下のコマンドをそのまま実行してください．
 ```bash
-conda create -n pbl -c conda-forge python=3.7 opencv=4.0.1 dlib=19.22.0 matplotlib=3.5.3 pandas notebook ipykernel
+conda create -n pbl -c conda-forge python=3.7 opencv=4.0.1 dlib=19.22.0 matplotlib=3.5.3 pandas notebook ipykernel ruptures
 ```
-このコマンドは，"pbl"という仮想環境を作成し，conda-forgeから必要なライブラリ（opencv, dlib, matplotlib, pandas, jupyter notebook, ipykernel）を指定のバージョンでインストールします．
+このコマンドは，"pbl"という仮想環境を作成し，conda-forgeから必要なライブラリ（opencv, dlib, matplotlib, pandas, jupyter notebook, ipykernel, ruptures）を指定のバージョンでインストールします．
 
 ### 方法2:conda_environment.ymlファイルを使った仮想環境の作成
 
-GitHub(このレポジトリ)に公開されている[`conda_environment.yml`](conda_environment.yml)ファイルを使って仮想環境を作成する方法です．以下の手順で進めてください．まず，`curl`コマンドを用いて`conda_environment.yml`ファイルをダウンロードします．
+GitHub(このレポジトリ)に公開されている[conda_environment.yml](conda_environment.yml)ファイルを使って仮想環境を作成する方法です．以下の手順で進めてください．まず，`curl`コマンドを用いてconda_environment.ymlファイルをダウンロードします．
 ```bash
 curl -O https://raw.githubusercontent.com/meruemon/PBL/refs/heads/main/conda_environment.yml
 ```
 
-ダウンロードした`conda_environment.yml`ファイルを使って仮想環境を作成します．
+conda_environment.ymlファイルはホームフォルダ(自身のユーザ名がついたフォルダ)へ保存されます．
+ダウンロードしたconda_environment.ymlファイルを使って仮想環境を作成します．
 ```bash
 conda env create -f conda_environment.yml
 ```
@@ -49,4 +50,11 @@ conda env create -f conda_environment.yml
 ```bash
 (pbl) C:\Users\ユーザ名> conda deactivate
 (base) C:\Users\ユーザ名>
+```
+
+## 仮想環境に追加ライブラリをインストール
+
+仮想環境`(pbl)`に切り替えて，`pip`コマンドでchnagefinderをインストールします．
+```bash
+(pbl) C:\Users\ユーザ名> pip install changefinder
 ```
