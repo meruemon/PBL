@@ -1,8 +1,10 @@
 # 事前準備
 
-データをダウンロードし、jupyter notebook(.ipynb)と同じフォルダにデータを保存します。
+データ(data.zip)をダウンロードし，jupyter notebook(.ipynb)と同じフォルダにdata.zipの中身を展開します．
 
-[ダウンロードリンク]()
+[ダウンロードリンク](https://www.dropbox.com/scl/fi/3pqqorq6hv0dhbvw258ne/data.zip?rlkey=mgtvmqw9ol5phn5erqy97jrs5&st=deahdzem&dl=0)
+
+フォルダ構造は以下の通りです．
 
 ```plaintext
 .
@@ -31,7 +33,7 @@
 
 # Step 1: 画像認識基礎
 
-画像や動画を読み込んで、処理する基本を学びます。
+画像や動画を読み込んで，処理する基本を学びます．
 
 # Step 2: データ分析
 
