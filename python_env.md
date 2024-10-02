@@ -23,7 +23,20 @@ conda create -n env-name -c channel-name python=3.7
 ```bash
 conda create -n pbl -c conda-forge python=3.7 opencv=4.0.1 dlib=19.22.0 matplotlib=3.5.3 pandas notebook ipykernel ruptures seaborn statsmodels tslearn
 ```
-このコマンドは，"pbl"という仮想環境を作成し，conda-forgeから必要なライブラリ（opencv, dlib, matplotlib, pandas, jupyter notebook, ipykernel, ruptures）を指定のバージョンでインストールします．
+このコマンドは，"pbl"という仮想環境を作成し，conda-forgeから必要なライブラリを指定のバージョンでインストールします．
+
+| ライブラリ            | 説明                                                                                             |
+|-----------------------|------------------------------------------------------------------------------------------------|
+| opencv                | リアルタイムの画像およびビデオ処理のためのオープンソースのコンピュータビジョンと機械学習ライブラリ． |
+| dlib                  | 機械学習ライブラリ．顔検出やランドマーク検出などのタスクに利用される．|
+| statsmodels           | 統計モデルの推定，テストの実行，データの探索のためのクラスと関数を提供する．|
+| ruptures              | 時系列データのオフラインの変化点検出に特化したライブラリ．|
+| tslearn               | 時系列データの分析のための機械学習ツールを提供する．|
+| matplotlib            | ビジュアライゼーションを作成するための総合的な可視化ライブラリ．|
+| seaborn               | matplotlibベースのデータ可視化ライブラリ． |
+| pandas                | Python上でデータフレームなどのデータ構造を提供するオープンソースのデータ解析と操作のツール．|
+| jupyter notebook      | ライブコード，数式，可視化，テキストを含むドキュメントを作成・共有するウェブアプリ．|
+| ipykernel             | JupyterのためのIPythonカーネルで，Pythonコードの実行を可能にする．|
 
 ### 方法2:~conda_environment.ymlファイルを使った仮想環境の作成~(jupyter notebookが起動しないので検証中)
 
