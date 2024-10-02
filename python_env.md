@@ -21,7 +21,7 @@ conda create -n env-name -c channel-name python=3.7
 
 実際に，演習で使用するライブラリをインストールするために，Python 3.7を使った仮想環境を作成します．以下のコマンドをそのまま実行してください．
 ```bash
-conda create -n pbl -c conda-forge python=3.7 opencv=4.0.1 dlib=19.22.0 matplotlib=3.5.3 pandas notebook ipykernel ruptures
+conda create -n pbl -c conda-forge python=3.7 opencv=4.0.1 dlib=19.22.0 matplotlib=3.5.3 pandas notebook ipykernel ruptures seaborn statsmodels tslearn
 ```
 このコマンドは，"pbl"という仮想環境を作成し，conda-forgeから必要なライブラリ（opencv, dlib, matplotlib, pandas, jupyter notebook, ipykernel, ruptures）を指定のバージョンでインストールします．
 
@@ -40,7 +40,7 @@ conda env create -f conda_environment.yml
 
 ## 仮想環境の切り替え
 
-作成した仮想環境に切り替えるには以下を実行します．`(base)`が仮想環境`(pbl)`に変化することが確認できます．
+作成した仮想環境に切り替えるには以下を実行します．`base`が仮想環境`pbl`に変化することが確認できます．
 ```bash
 (base) C:\Users\ユーザ名> conda activate pbl
 (pbl) C:\Users\ユーザ名>
@@ -54,7 +54,7 @@ conda env create -f conda_environment.yml
 
 ## 仮想環境に追加ライブラリをインストール
 
-仮想環境`(pbl)`に切り替えて，`pip`コマンドでchnagefinderをインストールします．
+仮想環境`pbl`に切り替えて，`pip`コマンドでchnagefinderをインストールします．
 ```bash
 (pbl) C:\Users\ユーザ名> pip install changefinder
 ```
