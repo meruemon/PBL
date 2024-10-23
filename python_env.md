@@ -74,3 +74,15 @@ conda env create -f conda_environment.yml
 ```bash
 (pbl) C:\Users\ユーザ名> pip install changefinder
 ```
+
+## Darknet (yolov5)用
+
+OpenCV 4.7.0をインストールした仮想環境を構築します．
+```bash
+conda create -n pbl_cv47 -c conda-forge python=3.8 opencv=4.7.0 dlib=19.22.0 matplotlib=3.5.3 pandas notebook ipykernel ruptures seaborn statsmodels tslearn
+```
+
+```bash
+(base) C:\Users\ユーザ名> conda activate pbl_cv47
+(pbl_cv47) C:\Users\ユーザ名>
+```
