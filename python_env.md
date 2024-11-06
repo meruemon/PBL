@@ -86,3 +86,22 @@ conda create -n pbl_cv47 -c conda-forge python=3.8 opencv=4.7.0 dlib=19.22.0 mat
 (base) C:\Users\ユーザ名> conda activate pbl_cv47
 (pbl_cv47) C:\Users\ユーザ名>
 ```
+
+## 視線推定 (L2CS-Net)用
+
+```bash
+conda create -n pbl_gaze -c conda-forge python=3.8 opencv=4.7.0 dlib=19.22.0 matplotlib=3.5.3 pandas notebook ipykernel ruptures seaborn statsmodels tslearn onnx git
+```
+
+```bash
+(base) C:\Users\ユーザ名> conda activate pbl_gaze
+(pbl_gaze) C:\Users\ユーザ名>
+```
+
+L2CS-Netの[github](https://github.com/Ahmednull/L2CS-Net?tab=readme-ov-file)に従い，ライブラリをインストールします．
+
+```
+(pbl_gaze) C:\Users\ユーザ名> pip install git+https://github.com/edavalosanaya/L2CS-Net.git@main
+```
+
+READMEに記載されている[リンク](https://drive.google.com/drive/folders/17p6ORr-JQJcw-eYtG2WGNiuS_qVKwdWd?usp=sharing]から事前学習済のモデルをダウンロードしてください．ダウンロードするファイルはGaze360をクリックした先にある`L2CSNet_gaze360.pkl`です．
