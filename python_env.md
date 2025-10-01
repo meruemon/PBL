@@ -52,15 +52,15 @@ conda create -n pbl_cv47 -c conda-forge python=3.8 opencv=4.7.0 dlib=19.22.0 mat
 
 仮想環境から抜けて`base`に戻る場合は以下を実行します．
 ```bash
-(pbl) C:\Users\ユーザ名> conda deactivate
+(pbl_cv47) C:\Users\ユーザ名> conda deactivate
 (base) C:\Users\ユーザ名>
 ```
 
 ## 仮想環境に追加モジュールをインストール
 
-仮想環境`pbl`に切り替えて，`pip`コマンドでmediapipeとchnagefinderをインストールします．
+仮想環境`pbl_cv47`に切り替えて，`pip`コマンドでmediapipeとchnagefinderをインストールします．
 ```bash
-(pbl) C:\Users\ユーザ名> pip install mediapipe changefinder
+(pbl_cv47) C:\Users\ユーザ名> pip install mediapipe changefinder
 ```
 
 ### 追加インストールライブラリ
@@ -69,6 +69,14 @@ conda create -n pbl_cv47 -c conda-forge python=3.8 opencv=4.7.0 dlib=19.22.0 mat
 |-----------------------|------------------------------------------------------------------------------------------------|
 | mediapipe             | Googleが開発した，顔検出、手の検出、ポーズ推定などのコンピュータビジョンタスクのための機械学習ライブラリ．リアルタイムでの人体の動作解析に利用される．|
 | changefinder          | 時系列データにおける変化点（異常）をオンラインで検出するためのライブラリ．|
+
+## jupyter notebookの起動
+
+仮想環境`pbl_cv47`に切り替えて，jupyter notebookを起動します．
+```bash
+(pbl_cv47) C:\Users\ユーザ名> jupyter notebook
+```
+
 
 ## （必要時に使用）視線推定 (L2CS-Net)用
 
