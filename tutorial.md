@@ -11,7 +11,7 @@
 
 データ(data.zip)をダウンロードし，jupyter notebook(.ipynb)と同じフォルダにdata.zipの中身を展開します．
 
-[ダウンロードリンク](https://www.dropbox.com/scl/fi/3pqqorq6hv0dhbvw258ne/data.zip?rlkey=mgtvmqw9ol5phn5erqy97jrs5&st=deahdzem&dl=0)
+[ダウンロードリンク](https://www.dropbox.com/scl/fi/k1ocyn4w3jttvrffpe8qb/data.zip?rlkey=6gudmg8srfy43kosor39ttlrq&st=onfascev&dl=0)
 
 フォルダ構造は以下の通りです．
 
