@@ -17,20 +17,9 @@
 
 ```plaintext
 .
-├── det
-│   ├── MobileNetSSD_deploy.caffemodel
-│   └── MobileNetSSD_deploy.prototxt
 ├── img
 │   ├── img01.jpg
 │   └── img02.jpg
-├── pose
-│   ├── coco
-│   │   ├── pose_deploy_linevec.prototxt
-│   │   └── pose_iter_440000.caffemodel
-│   └── mpi
-│       ├── pose_deploy_linevec.prototxt
-│       ├── pose_deploy_linevec_faster_4_stages.prototxt
-│       └── pose_iter_160000.caffemodel
 ├── dlib_face_recognition_resnet_model_v1.dat
 ├── haarcascade_frontalface_alt.xml
 ├── shape_predictor_68_face_landmarks.dat
