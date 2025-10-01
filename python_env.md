@@ -39,15 +39,23 @@ conda create -n pbl_cv47 -c conda-forge python=3.8 opencv=4.7.0 dlib=19.22.0 mat
 | pandas                | Python上でデータフレームなどのデータ構造を提供するオープンソースのデータ解析と操作のツール．|
 | jupyter notebook      | ライブコード，数式，可視化，テキストを含むドキュメントを作成・共有するウェブアプリ．|
 | ipykernel             | JupyterのためのIPythonカーネルで，Pythonコードの実行を可能にする．|
-
+| onnx                  | Open Neural Network Exchange．異なる機械学習フレームワーク間でモデルを共有するための標準．|
+| labelimg              | 画像アノテーションツール．物体検出のためのバウンディングボックスを作成する．|
 
 ## 仮想環境の切り替え
 
-作成した仮想環境に切り替えるには以下を実行します．`base`が仮想環境`pbl`に変化することが確認できます．
+作成した仮想環境に切り替えるには以下を実行します．`base`が仮想環境`pbl_cv47`に変化することが確認できます．
 ```bash
-(base) C:\Users\ユーザ名> conda activate pbl
-(pbl) C:\Users\ユーザ名>
+(base) C:\Users\ユーザ名> conda activate pbl_cv47
+(pbl_cv47) C:\Users\ユーザ名>
 ```
+
+### 追加インストールライブラリ
+
+| ライブラリ            | 説明                                                                                             |
+|-----------------------|------------------------------------------------------------------------------------------------|
+| mediapipe             | Googleが開発した，顔検出、手の検出、ポーズ推定などのコンピュータビジョンタスクのための機械学習ライブラリ．リアルタイムでの人体の動作解析に利用される．|
+| changefinder          | 時系列データにおける変化点（異常）をオンラインで検出するためのライブラリ．|
 
 仮想環境から抜けて`base`に戻る場合は以下を実行します．
 ```bash
@@ -57,12 +65,12 @@ conda create -n pbl_cv47 -c conda-forge python=3.8 opencv=4.7.0 dlib=19.22.0 mat
 
 ## 仮想環境に追加モジュールをインストール
 
-仮想環境`pbl`に切り替えて，`pip`コマンドでchnagefinderをインストールします．
+仮想環境`pbl`に切り替えて，`pip`コマンドでmediapipeとchnagefinderをインストールします．
 ```bash
-(pbl) C:\Users\ユーザ名> pip install changefinder
+(pbl) C:\Users\ユーザ名> pip install mediapipe changefinder
 ```
 
-## 視線推定 (L2CS-Net)用
+## （必要時に使用）視線推定 (L2CS-Net)用
 
 ```bash
 conda create -n pbl_gaze -c conda-forge python=3.8 opencv=4.7.0 dlib=19.22.0 matplotlib=3.5.3 pandas notebook ipykernel ruptures seaborn statsmodels tslearn onnx git
