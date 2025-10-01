@@ -12,19 +12,18 @@
 conda update -n base -c defaults conda
 ```
 
-## conda仮想環境の構築(Pythonバージョンを3.7に設定)
+## conda仮想環境の構築
 
-### 方法1:コマンドによる仮想環境の作成
 これは，Anacondaを使った仮想環境を作成するコマンドのテンプレートです．
 ```bash
-conda create -n env-name -c channel-name python=3.7
+conda create -n env-name -c channel-name python=3.8
 ```
-* "環境名"には任意の仮想環境名を指定してください．
-* "チャンネル名"にはインストール元のチャンネル（通常はconda-forgeなど）を指定します．
+* "env-name（環境名）"には任意の仮想環境名を指定してください．
+* "channel-name（チャンネル名）"にはインストール元のチャンネル（通常はconda-forgeなど）を指定します．
 
 実際に，演習で使用するライブラリをインストールするために，Python 3.7を使った仮想環境を作成します．以下のコマンドをそのまま実行してください．
 ```bash
-conda create -n pbl -c conda-forge python=3.7 opencv=4.0.1 dlib=19.22.0 matplotlib=3.5.3 pandas notebook ipykernel ruptures seaborn statsmodels tslearn
+conda create -n pbl_cv47 -c conda-forge python=3.8 opencv=4.7.0 dlib=19.22.0 matplotlib=3.5.3 pandas notebook ipykernel ruptures seaborn statsmodels tslearn onnx labelimg
 ```
 このコマンドは，"pbl"という仮想環境を作成し，conda-forgeから必要なライブラリを指定のバージョンでインストールします．
 
@@ -41,18 +40,6 @@ conda create -n pbl -c conda-forge python=3.7 opencv=4.0.1 dlib=19.22.0 matplotl
 | jupyter notebook      | ライブコード，数式，可視化，テキストを含むドキュメントを作成・共有するウェブアプリ．|
 | ipykernel             | JupyterのためのIPythonカーネルで，Pythonコードの実行を可能にする．|
 
-### 方法2:~conda_environment.ymlファイルを使った仮想環境の作成~(jupyter notebookが起動しないので検証中)
-
-GitHub(このレポジトリ)に公開されている[conda_environment.yml](conda_environment.yml)ファイルを使って仮想環境を作成する方法です．以下の手順で進めてください．まず，`curl`コマンドを用いてconda_environment.ymlファイルをダウンロードします．
-```bash
-curl -O https://raw.githubusercontent.com/meruemon/PBL/refs/heads/main/conda_environment.yml
-```
-
-conda_environment.ymlファイルはホームフォルダ(自身のユーザ名がついたフォルダ)へ保存されます．
-ダウンロードしたconda_environment.ymlファイルを使って仮想環境を作成します．
-```bash
-conda env create -f conda_environment.yml
-```
 
 ## 仮想環境の切り替え
 
@@ -73,18 +60,6 @@ conda env create -f conda_environment.yml
 仮想環境`pbl`に切り替えて，`pip`コマンドでchnagefinderをインストールします．
 ```bash
 (pbl) C:\Users\ユーザ名> pip install changefinder
-```
-
-## Darknet (yolov5)用
-
-OpenCV 4.7.0をインストールした仮想環境を構築します．
-```bash
-conda create -n pbl_cv47 -c conda-forge python=3.8 opencv=4.7.0 dlib=19.22.0 matplotlib=3.5.3 pandas notebook ipykernel ruptures seaborn statsmodels tslearn onnx labelimg
-```
-
-```bash
-(base) C:\Users\ユーザ名> conda activate pbl_cv47
-(pbl_cv47) C:\Users\ユーザ名>
 ```
 
 ## 視線推定 (L2CS-Net)用
