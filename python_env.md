@@ -100,7 +100,7 @@ READMEに記載されている[リンク](https://drive.google.com/drive/folders
 ## メモ
 
 ```bash
-conda create -n pbl_gopro python=3.10
+conda create -n pbl_gopro -c conda-forge python=3.10 opencv=4.7.0 dlib=19.24.2 matplotlib=3.5.3
 ```
 
 ```bash
@@ -109,5 +109,5 @@ conda create -n pbl_gopro python=3.10
 ```
 
 ```bash
-(pbl_gopro) C:\Users\ユーザ名> pip install opencv-python==4.7.0.72 dlib==19.24.2 matplotlib==3.5.3 cmake pandas notebook ipykernel ruptures seaborn statsmodels tslearn onnx labelimg open-gopro mediapipe changefinder
+(pbl_gopro) C:\Users\ユーザ名> >pip install pandas notebook ipykernel ruptures seaborn statsmodels tslearn onnx labelimg open-gopro mediapipe changefinder
 ```
