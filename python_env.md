@@ -100,7 +100,7 @@ READMEに記載されている[リンク](https://drive.google.com/drive/folders
 ## メモ
 
 ```bash
-conda create -n pbl_gopro -c conda-forge python=3.10 opencv=4.7.0 dlib=19.24.2 matplotlib=3.5.3
+conda create -n pbl_gopro -c conda-forge python=3.10 opencv=4.7.0 dlib=19.24.2 matplotlib=3.5.3 git
 ```
 
 ```bash
