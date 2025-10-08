@@ -111,3 +111,7 @@ conda create -n pbl_gopro -c conda-forge python=3.10 opencv=4.7.0 dlib=19.24.2 m
 ```bash
 (pbl_gopro) C:\Users\ユーザ名> >pip install pandas notebook ipykernel ruptures seaborn statsmodels tslearn onnx labelimg open-gopro mediapipe changefinder
 ```
+
+```
+(pbl_gopro) C:\Users\ユーザ名> pip install git+https://github.com/edavalosanaya/L2CS-Net.git@main
+```
