@@ -96,3 +96,18 @@ L2CS-Netの[github](https://github.com/Ahmednull/L2CS-Net?tab=readme-ov-file)に
 ```
 
 READMEに記載されている[リンク](https://drive.google.com/drive/folders/17p6ORr-JQJcw-eYtG2WGNiuS_qVKwdWd?usp=sharing)から事前学習済のモデルをダウンロードしてください．ダウンロードするファイルはGaze360をクリックした先にある`L2CSNet_gaze360.pkl`です．
+
+## メモ
+
+```bash
+conda create -n pbl_gopro python=3.10
+```
+
+```bash
+(base) C:\Users\ユーザ名> conda activate pbl_gopro
+(pbl_gopro) C:\Users\ユーザ名>
+```
+
+```bash
+(pbl_gopro) C:\Users\ユーザ名> pip install opencv-python==4.7.0.72 dlib==19.24.2 matplotlib==3.5.3 cmake pandas notebook ipykernel ruptures seaborn statsmodels tslearn onnx labelimg open-gopro mediapipe changefinder
+```
