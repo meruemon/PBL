@@ -99,3 +99,4 @@ conda create -n pbl_gopro -c conda-forge python=3.10 opencv=4.7.0 dlib=19.24.2 m
 
 READMEに記載されている[リンク](https://drive.google.com/drive/folders/17p6ORr-JQJcw-eYtG2WGNiuS_qVKwdWd?usp=sharing)から事前学習済のモデルをダウンロードしてください．ダウンロードするファイルはGaze360をクリックした先にある`L2CSNet_gaze360.pkl`です．
 
+[coco.names](https://www.dropbox.com/scl/fi/12tid68lyn0f6pj5gzbc7/coco.names?rlkey=dtadlmzl277p7iwjqoa63trjj&st=4m44y03s&dl=0)
