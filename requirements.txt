@@ -1,0 +1,28 @@
+# データサイエンス基礎・応用PBL（吉田班）共通環境
+# 使い方: conda 環境を作って activate したあと  pip install -r requirements.txt
+
+# --- 共通（Notebook，表，グラフ，機械学習） ---
+notebook
+ipykernel
+numpy
+pandas
+matplotlib
+seaborn
+scikit-learn
+requests
+Pillow
+
+# --- 画像認識テーマ ---
+opencv-contrib-python<5    # OpenCV 4系（5系は HOG/Haar 検出器の場所が変わり教材が動かない）
+mediapipe==0.10.21         # 顔メッシュ・姿勢・手の検出（Google）．0.10.30 以降と 1.x は mp.solutions が削除され教材が動かない
+numpy<2                    # mediapipe 0.10.21 の要件（明示しておくと依存解決が速い）
+ruptures                   # 時系列の変化点検出
+
+# --- SNS分析テーマ ---
+janome                     # 日本語形態素解析（純Python．インストールが失敗しない）
+wordcloud                  # ワードクラウド
+networkx                   # 共起ネットワーク
+websockets>=11             # Jetstream（リアルタイム投稿の観測）
+
+# --- 任意 ---
+# matplotlib-fontja        # Mac/Linux で日本語フォントが見つからないとき

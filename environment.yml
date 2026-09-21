@@ -1,0 +1,15 @@
+# データサイエンス基礎・応用PBL（吉田班）共通環境
+# 使い方（Anaconda Prompt，このファイルがあるフォルダで）:
+#   conda env create -f environment.yml
+#   conda activate pbl2026
+#
+# dlib だけは pip でのビルドに失敗しやすいので conda-forge から入れ，残りは pip で入れる．
+name: pbl2026
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - dlib
+  - pip:
+      - -r requirements.txt

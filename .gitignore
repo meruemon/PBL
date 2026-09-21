@@ -1,0 +1,20 @@
+# 取得したデータ・画像・モデルは公開しない（授業内のみで利用）
+sns_analysis/data/
+image_recognition/data/*
+!image_recognition/data/README.md
+image_recognition/det/*.onnx
+image_recognition/det/*.pt
+image_recognition/advanced/det/
+**/downloaded_images/
+*.avi
+*.mp4
+
+# Python / Jupyter
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+*.part
+
+# OS
+.DS_Store
+Thumbs.db
