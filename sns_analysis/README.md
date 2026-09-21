@@ -56,7 +56,8 @@ sns_analysis/
 | 関数 | 役割 |
 |---|---|
 | `search_posts(query, limit, sort, lang, since, until)` | キーワード検索（1回最大100件） |
-| `search_posts_by_period(query, days, hours_per_window)` | 期間を分割して大量取得 |
+| `search_posts_by_period(query, days, hours_per_window)` | 期間を分割して大量取得（アカウント不要） |
+| `search_posts_paged(query, max_posts)` | cursor で続きを連続取得（`login` 後に使う） |
 | `search_actors(query)` / `get_profile(handle)` | アカウント検索・プロフィール |
 | `get_author_posts(handle, max_posts)` | 特定アカウントの投稿 |
 | `get_replies(post_uri)` | 投稿への返信スレッド |
@@ -66,7 +67,7 @@ sns_analysis/
 | `tokenize(text, pos, stopwords)` | 日本語の形態素解析（原形・品詞フィルタ） |
 | `anonymize(df)` | 発表用に投稿者・URL列を落とす |
 | `set_japanese_font()` / `japanese_font_path()` | グラフ・ワードクラウドの日本語フォント |
-| `login(handle, app_password)` | （任意）アカウントでログインして取得を安定させる |
+| `login(handle, app_password)` / `logout()` | （任意）アカウントでログインして取得を安定させる／公開ホストに戻す |
 
 ## スクリプトの使い方
 
@@ -76,6 +77,21 @@ python scripts/collect_posts.py --query 防災 --days 7 --window 6 --out data/bo
 python scripts/collect_posts.py --query 防災 --query 観光 --days 3 --window 12 --out data/posts.csv
 python scripts/collect_posts.py --author chunichi.bsky.social --max 300 --out data/chunichi.csv
 ```
+
+## アカウントなし／ありの違い（任意でログインして使える）
+
+授業の演習は **アカウントなし**（公開ホスト）で完結します．プロジェクトで数千件以上を連続取得したいときや，教室で同時にアクセスして 403 が頻発するときは，自分の Bluesky アカウントでログインして使えます（第2回 Notebook の 10 節に例があります）．
+
+| | アカウントなし（既定） | アカウントあり（`login()`） |
+|---|---|---|
+| 事前準備 | 不要 | Bluesky アカウント＋アプリパスワード |
+| 1回の検索 | 最大100件 | 最大100件 |
+| 続きの取得（cursor） | 不可 → 期間分割（`search_posts_by_period`） | 可 → `search_posts_paged` |
+| アクセス制限 | 送信元ネットワーク単位（教室で共有） | アカウント単位 |
+| 取得できる範囲 | 公開投稿・公開プロフィール | 同じ（＋自分のタイムライン等） |
+
+- アプリパスワードは 設定 → プライバシーとセキュリティ → アプリパスワード で発行します．**通常のパスワードは絶対に使わない**．Notebook に書き込まず `getpass` で入力します．
+- ログインしても取得できるのは公開投稿だけです．データの扱いのルール（下記）は変わりません．
 
 ## 公開APIの制約（2026年9月時点）と対処
 

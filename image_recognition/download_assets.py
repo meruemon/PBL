@@ -8,11 +8,11 @@ download_assets.py ― 画像認識演習で使うデータ・モデルをまと
 用意されるもの:
     data/vtest.avi                               歩行者の動画（OpenCV 公式サンプル）
     data/shape_predictor_68_face_landmarks.dat   dlib の顔ランドマークモデル（約100MB）
-    data/img/                                    人物写真を置くフォルダ（自分で用意する．下記参照）
-    det/yolov5s.onnx                             ※自動では入手できないので README の手順で用意する
+    data/img/                                    人物写真を置くフォルダ
+    det/yolov5s.onnx                             YOLOv5s 学習済みモデル
 
-data/img/img01.jpg（複数の人が写った写真）と data/img/img02.jpg（顔が正面を向いた写真）は，
-自分たちで撮影した写真や，利用条件を確認したフリー素材を置いてください．
+data/img/img01.jpg，img02.jpg と det/yolov5s.onnx は Dropbox の配布フォルダから手動でダウンロードして置きます．
+    https://www.dropbox.com/scl/fo/nkp6an01g3aohmaq47yyo/AC__dvrQ5QQGdlevxi5Chgs?rlkey=i42q8x1dte3cat2ajbx93uub2&st=t7qbp6wb&dl=0
 """
 import bz2
 import sys
@@ -68,10 +68,19 @@ def main() -> None:
         except Exception as e:  # ネットワーク障害などで止まらないようにする
             print(f"[fail] {dest.name}: {e}")
     print()
+    missing = []
     if not (BASE / "det" / "yolov5s.onnx").exists():
-        print("※ det/yolov5s.onnx がまだありません．README.md の「YOLOv5 モデルの準備」を参照してください．")
-    if not any((BASE / "data" / "img").glob("*.jpg")):
-        print("※ data/img/ に img01.jpg, img02.jpg（人物写真）を置いてください．")
+        missing.append("det/yolov5s.onnx")
+    for name in ("img01.jpg", "img02.jpg"):
+        if not (BASE / "data" / "img" / name).exists():
+            missing.append(f"data/img/{name}")
+    if missing:
+        print("※ 次のファイルは Dropbox の配布フォルダからダウンロードして置いてください:")
+        for m in missing:
+            print("   -", m)
+        print("   https://www.dropbox.com/scl/fo/nkp6an01g3aohmaq47yyo/AC__dvrQ5QQGdlevxi5Chgs?rlkey=i42q8x1dte3cat2ajbx93uub2&st=t7qbp6wb&dl=0")
+    else:
+        print("すべてのファイルが揃っています．")
 
 
 if __name__ == "__main__":

@@ -33,15 +33,30 @@ python download_assets.py
 |---|---|---|
 | `data/vtest.avi` | 歩行者の動画 | OpenCV 公式サンプル（自動） |
 | `data/shape_predictor_68_face_landmarks.dat` | dlib 顔ランドマークモデル | dlib.net（自動） |
-| `data/img/img01.jpg`, `img02.jpg` | 複数の人が写った写真／顔が正面の写真 | **自分で用意**（自分たちの写真，または利用条件を確認したフリー素材） |
+| `data/img/img01.jpg`, `img02.jpg` | 複数の人が写った写真／顔が正面の写真 | **配布フォルダ（Dropbox）** から `data/img/` に置く |
 | `det/coco.names` | YOLO の80クラス名 | 同梱 |
-| `det/yolov5s.onnx` | YOLOv5s 学習済みモデル（ONNX） | **下記の手順** |
+| `det/yolov5s.onnx` | YOLOv5s 学習済みモデル（ONNX） | **配布フォルダ（Dropbox）** から `det/` に置く |
 
-### 3. YOLOv5 モデルの準備（第4回までに）
+### 3. 配布ファイルのダウンロード（第2回までに）
 
-方法A：担当教員が配布する `yolov5s.onnx` を `det/` に置く（授業で案内します）．
+`img01.jpg`，`img02.jpg`，`yolov5s.onnx` は次の Dropbox フォルダで配布します（ログイン不要．右上の「ダウンロード」でまとめて取得できます）．
 
-方法B：Google Colab で自分で変換する．新しいノートブックで次を順に実行し，生成された `yolov5s.onnx` をダウンロードして `det/` に置きます．
+**https://www.dropbox.com/scl/fo/nkp6an01g3aohmaq47yyo/AC__dvrQ5QQGdlevxi5Chgs?rlkey=i42q8x1dte3cat2ajbx93uub2&st=t7qbp6wb&dl=0**
+
+ダウンロード後，次の場所に置いてください．
+
+```
+image_recognition/
+├── data/img/img01.jpg
+├── data/img/img02.jpg
+└── det/yolov5s.onnx
+```
+
+配布ファイルは授業内でのみ使用し，再配布しないでください．
+
+### （参考）YOLOv5 モデルを自分で変換する場合
+
+配布ファイルが使えないときは，Google Colab で変換できます．新しいノートブックで次を順に実行し，生成された `yolov5s.onnx` をダウンロードして `det/` に置きます．
 
 ```
 !git clone https://github.com/ultralytics/yolov5
@@ -61,8 +76,8 @@ image_recognition/
 ├── download_assets.py            演習データのダウンロード
 ├── det/
 │   ├── coco.names                YOLO のクラス名（80種）
-│   └── yolov5s.onnx              学習済みモデル（各自で用意）
-├── data/                         動画・画像（Git 管理外）
+│   └── yolov5s.onnx              学習済みモデル（Dropbox で配布）
+├── data/                         動画・画像（Git 管理外．img01/02.jpg は Dropbox で配布）
 ├── scripts/                      Anaconda Prompt から実行する .py
 │   ├── run_webcam.py             Webカメラ表示（.py 実行の練習）
 │   ├── count_people_webcam.py    Webカメラの人数を時刻付きで CSV 記録

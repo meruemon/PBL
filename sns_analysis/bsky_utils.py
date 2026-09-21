@@ -98,12 +98,18 @@ def _get(endpoint: str, params: dict, timeout: int = 20, max_retries: int = 4) -
 def login(handle: str, app_password: str, pds: str = "https://bsky.social") -> dict:
     """Blueskyアカウントでログインし，以後のAPIアクセスを認証付きにする（任意）．
 
-    公開ホストで403が頻発する場合や，より多くの投稿をページング取得したい場合に使う．
-    * app_password は Bluesky の「設定 → アプリパスワード」で発行した専用パスワード．
-      通常のログインパスワードは絶対に使わない．コードやNotebookに書き込まず，
-      getpass で入力する： `login("xxx.bsky.social", getpass.getpass())`
-    * 認証付きのアクセス制限はアカウント単位なので，同じ教室からでも影響を受けにくい．
-    ※ この関数は仕様書に基づいて実装しており，教材作成時には未検証．
+    アカウントなし（既定）と ありの違い
+      なし: 公開ホスト（api.bsky.app）を利用．1検索100件まで，cursor（続き）は不可，
+            同じネットワークからのアクセス集中で403が出やすい．準備不要で授業向き．
+      あり: 自分のPDS（bsky.social）経由でアクセス．cursor で続きを取得できる
+            （search_posts_paged），制限はアカウント単位でかかるので教室で同時に使っても
+            影響を受けにくい．自分のタイムライン等も取得可能．要アカウント＋アプリパスワード．
+
+    * app_password は Bluesky の「設定 → プライバシーとセキュリティ → アプリパスワード」で
+      発行した専用パスワード．通常のログインパスワードは絶対に使わない．コードや Notebook に
+      書き込まず，getpass で入力する： `login("xxx.bsky.social", getpass.getpass())`
+    * ログインしても取得できるのは公開投稿だけで，データの扱いのルールは変わらない．
+    ※ この関数は API 仕様書に基づいて実装しており，教材作成時には実アカウントで未検証．
     """
     r = requests.post(f"{pds}/xrpc/com.atproto.server.createSession",
                       json={"identifier": handle, "password": app_password},
@@ -229,6 +235,50 @@ def search_posts(query: str, limit: int = 100, lang: str | None = "ja", sort: st
     df = posts_to_dataframe(data.get("posts", []), query=query)
     if japanese_only and len(df):
         df = df[df["is_japanese"]].reset_index(drop=True)
+    return df
+
+
+def search_posts_paged(query: str, max_posts: int = 500, lang: str | None = "ja", sort: str = "latest",
+                       since: str | None = None, until: str | None = None,
+                       japanese_only: bool = True, pause: float = 0.5, verbose: bool = True) -> pd.DataFrame:
+    """cursor（続きの取得）を使って最大 max_posts 件まで検索する．
+
+    未ログインの公開ホストでは2ページ目以降が拒否（403）されるため，
+    実質的に login() したときに使う関数．未ログインなら search_posts_by_period を使う．
+    """
+    rows, cursor, page = [], None, 0
+    while len(rows) < max_posts:
+        params = {"q": query, "limit": 100, "sort": sort}
+        if lang:
+            params["lang"] = lang
+        if since:
+            params["since"] = since
+        if until:
+            params["until"] = until
+        if cursor:
+            params["cursor"] = cursor
+        try:
+            data = _get("app.bsky.feed.searchPosts", params, max_retries=4 if cursor is None else 2)
+        except RuntimeError as e:
+            if cursor is not None and "403" in str(e):
+                print("  2ページ目以降の取得が拒否されました．未ログインでは cursor が使えません．"
+                      "login() するか，search_posts_by_period() を使ってください．")
+                break
+            raise
+        posts = data.get("posts", [])
+        rows.extend(post_to_row(p, query=query) for p in posts)
+        page += 1
+        cursor = data.get("cursor")
+        if verbose:
+            print(f"  ページ{page}: {len(posts)}件（累計 {len(rows)}件）")
+        if not cursor or not posts:
+            break
+        time.sleep(pause)
+    df = pd.DataFrame(rows[:max_posts])
+    if len(df):
+        df = add_datetime_columns(df).drop_duplicates("post_uri").reset_index(drop=True)
+        if japanese_only:
+            df = df[df["is_japanese"]].reset_index(drop=True)
     return df
 
 
@@ -562,7 +612,7 @@ def set_japanese_font() -> str | None:
 
 
 __all__ = [
-    "search_posts", "search_posts_by_period", "get_profile", "search_actors", "get_author_posts",
+    "search_posts", "search_posts_by_period", "search_posts_paged", "get_profile", "search_actors", "get_author_posts",
     "get_replies", "get_trending_topics", "save_posts", "load_posts", "anonymize", "clean_text",
     "download_images", "jetstream_collect", "tokenize", "DEFAULT_STOPWORDS",
     "japanese_font_path", "set_japanese_font", "posts_to_dataframe", "add_datetime_columns",

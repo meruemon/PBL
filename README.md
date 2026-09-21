@@ -58,8 +58,8 @@ jupyter notebook
 ブラウザが開くので，`image_recognition` または `sns_analysis` フォルダの `01_...ipynb` を開き，上から順にセルを実行します．
 Notebook と `.py` スクリプトの使い分けは [docs/02_jupyter_and_python.md](docs/02_jupyter_and_python.md) を見てください．
 
-> **画像認識テーマの人へ**：演習用の動画・モデルが別途必要です．[image_recognition/README.md](image_recognition/README.md) の「事前準備」を先に済ませてください．
-> **SNS分析テーマの人へ**：追加の準備は不要です．APIキーやアカウント登録もいりません．[sns_analysis/README.md](sns_analysis/README.md) を読んでから始めてください．
+> **画像認識テーマの人へ**：演習用の動画・モデルが別途必要です．[image_recognition/README.md](image_recognition/README.md) の「事前準備」（自動ダウンロードと Dropbox 配布ファイル）を先に済ませてください．
+> **SNS分析テーマの人へ**：追加の準備は不要です．APIキーやアカウント登録もいりません（Bluesky アカウントでログインして使う方法は任意の発展として用意しています）．[sns_analysis/README.md](sns_analysis/README.md) を読んでから始めてください．
 
 ---
 
