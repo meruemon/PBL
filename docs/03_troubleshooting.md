@@ -48,7 +48,11 @@
 
 | 症状 | 対処 |
 |---|---|
-| `Bluesky API にアクセスできませんでした: 403 Forbidden` | 同じネットワークからのアクセスが集中している．数十秒待って同じセルを再実行．`hours_per_window` を大きくして検索回数を減らす．どうしても駄目なら `sample_data` で先に進み，後で取得する（あるいは `login()`） |
+| `設定ファイル bsky_config.ini が無いか未記入です` | `sns_analysis/bsky_config.example.ini` をコピーして `bsky_config.ini` を作り，ハンドル名とアプリパスワードを記入する．Notebook を開いているフォルダ（`sns_analysis`）に置く．書き換えたら Kernel → Restart |
+| `設定ファイルの名前が bsky_config.ini.ini になっています` | Windows で拡張子が隠れていて，保存時に `.ini` が二重に付いた．エクスプローラーの「表示 → ファイル名拡張子」をオンにして `bsky_config.ini` に直す（そのままでも読み込むが，直しておく） |
+| `ログイン失敗 401: Invalid identifier or password` | ハンドル名（`@` 不要，例 `name.bsky.social`）とアプリパスワード（通常のパスワードではない）を確認．アプリパスワードを発行し直す |
+| `Bluesky API にアクセスできませんでした: 403 Forbidden` | ログインできていない（`login_status()` で確認）．ログイン済みなら数十秒待って再実行．どうしても駄目なら `sample_data` で先に進み，後で取得する |
+| `認証エラー（401）` がログイン中に出る | ログインの期限切れ後の更新に失敗．Kernel → Restart して再実行 |
 | `APIエラー 400: ...` | 検索語が空，`since/until` の形式が不正（`2026-09-01T00:00:00Z` の形式），ハンドル名の誤りなど．メッセージを読む |
 | 取得件数が 0 | 検索語が珍しすぎる／英語．`lang=None, japanese_only=False` で試す．`sort="top"` にする |
 | グラフの日本語が □（豆腐）になる | `set_japanese_font()` を実行．Mac/Linux でフォントが無ければ `pip install matplotlib-fontja` |

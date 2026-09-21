@@ -9,17 +9,22 @@ Notebook からは次のように読み込んで使います．
 
 設計方針
 --------
-* ログイン不要の公開API（AppView）だけを使う．学生にアカウントを要求しない．
+* 各自の Bluesky アカウント（無料）と「アプリパスワード」でログインして使う．
+  ハンドル名とアプリパスワードは同じフォルダの bsky_config.ini に書く（Git 管理外）．
+  最初の API 呼び出し時に自動でログインする．設定ファイルが無い／ログインに失敗したときは
+  公開ホスト（ログイン不要）にフォールバックするが，公開ホストは学内ネットワーク等から
+  拒否（403）されることがあり，続きの取得（cursor）もできない．
 * API仕様の変更に備え，APIアクセスはこのファイルに集約する．Notebookは道具を呼ぶだけ．
-* 投稿検索（searchPosts）は「1回の検索で最大100件」．それ以上集めたいときは
-  期間（since / until）を分割して集める（search_posts_by_period）．
+* 投稿検索（searchPosts）は「1回の検索で最大100件」．続きは cursor で取得する
+  （search_posts_paged）．期間を区切って集めたいときは since/until（search_posts_by_period）．
 * 取得したデータは授業内だけで扱う．発表資料にはハンドル名や投稿URLを載せない
   （anonymize() でハッシュ化できる）．
 
-動作確認: 2026-09-21（api.bsky.app / public.api.bsky.app / jetstream2）
+動作確認: 2026-09-21（公開ホスト，jetstream2）／ログイン方式は 2026-09 に実アカウントで確認
 """
 from __future__ import annotations
 
+import configparser
 import hashlib
 import json
 import re
@@ -34,11 +39,15 @@ import requests
 # 基本設定
 # ----------------------------------------------------------------------
 
-# 公開AppViewのホスト．先頭から順に試し，403などで失敗したら次を使う．
-HOSTS = ["https://api.bsky.app", "https://public.api.bsky.app"]
+# 公開AppViewのホスト（ログインしていないとき用）．先頭から順に試す．
+PUBLIC_HOSTS = ["https://api.bsky.app", "https://public.api.bsky.app"]
+HOSTS = list(PUBLIC_HOSTS)          # 現在のアクセス先（ログインすると自分の PDS に置き換わる）
 
 # 相手のサーバに「誰がアクセスしているか」を伝える（マナー）
 HEADERS = {"User-Agent": "KansaiU-DataScience-PBL/2026 (education)"}
+
+# ハンドル名とアプリパスワードを書く設定ファイル（このファイルと同じフォルダ）
+CONFIG_PATH = Path(__file__).resolve().parent / "bsky_config.ini"
 
 JST = timezone(timedelta(hours=9))
 
@@ -47,19 +56,152 @@ _JP_RE = re.compile(r"[぀-ヿ㐀-鿿]")
 _URL_RE = re.compile(r"https?://\S+")
 _MENTION_RE = re.compile(r"(?<!\w)@[A-Za-z0-9._:-]+")
 
+# ログイン状態（モジュール内で共有）
+_session = {"attempted": False, "logged_in": False, "handle": None, "did": None,
+            "pds": None, "refresh_jwt": None, "config": None}
+
+
+# ----------------------------------------------------------------------
+# ログイン（設定ファイル → 自動）
+# ----------------------------------------------------------------------
+
+def load_config(path: str | Path = CONFIG_PATH) -> dict | None:
+    """bsky_config.ini から handle と app_password を読む．無い／未記入なら None．"""
+    path = Path(path)
+    if not path.exists():
+        # よくある間違い：Windows で拡張子が隠れて bsky_config.ini.ini / .txt になっている
+        for wrong in (path.with_name(path.name + ".ini"), path.with_name(path.name + ".txt"),
+                      path.with_name(path.stem + ".txt")):
+            if wrong.exists():
+                print(f"設定ファイルの名前が {wrong.name} になっています．{path.name} に変更してください（今回はこのまま読み込みます）．")
+                path = wrong
+                break
+        else:
+            return None
+    cp = configparser.ConfigParser()
+    cp.read(path, encoding="utf-8")
+    if "bluesky" not in cp:
+        return None
+    def clean(v: str) -> str:   # 前後の空白と引用符（" '）を取り除く
+        return v.strip().strip('"').strip("'").strip()
+
+    handle = clean(cp["bluesky"].get("handle", "")).lstrip("@")
+    pw = clean(cp["bluesky"].get("app_password", ""))
+    if not handle or not pw or handle.startswith("your-") or pw.startswith("xxxx"):
+        return None
+    return {"handle": handle, "app_password": pw,
+            "pds": clean(cp["bluesky"].get("pds", "https://bsky.social")) or "https://bsky.social"}
+
+
+def login(handle: str, app_password: str, pds: str = "https://bsky.social", verbose: bool = True) -> dict:
+    """Blueskyアカウントでログインし，以後のAPIアクセスを認証付きにする．
+
+    通常は bsky_config.ini に書いておけば自動で呼ばれるので，直接呼ぶ必要はない．
+    * app_password は Bluesky の「設定 → プライバシーとセキュリティ → アプリパスワード」で
+      発行した専用パスワード．通常のログインパスワードは絶対に使わない．
+    * ログインしても取得できるのは公開投稿だけで，データの扱いのルールは変わらない．
+    """
+    r = requests.post(f"{pds}/xrpc/com.atproto.server.createSession",
+                      json={"identifier": handle, "password": app_password},
+                      headers={"User-Agent": HEADERS["User-Agent"]}, timeout=20)
+    if r.status_code != 200:
+        try:
+            msg = r.json().get("message", r.text[:200])
+        except Exception:
+            msg = r.text[:200]
+        raise RuntimeError(f"ログイン失敗 {r.status_code}: {msg}")
+    session = r.json()
+    endpoint = pds
+    for svc in (session.get("didDoc") or {}).get("service", []):
+        if svc.get("id", "").endswith("atproto_pds") and svc.get("serviceEndpoint"):
+            endpoint = svc["serviceEndpoint"]
+    HOSTS[:] = [endpoint]                      # 以後は自分のPDS経由でアクセス（AppViewへ中継される）
+    HEADERS["Authorization"] = f"Bearer {session['accessJwt']}"
+    _session.update({"attempted": True, "logged_in": True, "handle": session.get("handle"),
+                     "did": session.get("did"), "pds": endpoint, "refresh_jwt": session.get("refreshJwt"),
+                     "config": {"handle": handle, "app_password": app_password, "pds": pds}})
+    if verbose:
+        print(f"ログインしました: @{session.get('handle')}（アクセス先: {endpoint}）")
+    return {"handle": session.get("handle"), "did": session.get("did")}
+
+
+def login_from_config(path: str | Path = CONFIG_PATH, verbose: bool = True) -> bool:
+    """設定ファイルを読んでログインする．成功すれば True．"""
+    _session["attempted"] = True
+    cfg = load_config(path)
+    if cfg is None:
+        if verbose:
+            print(f"設定ファイル {Path(path).name} が無いか未記入です．公開ホスト（ログインなし）で続行します．\n"
+                  "  → bsky_config.example.ini をコピーして bsky_config.ini を作り，ハンドル名とアプリパスワードを記入してください．")
+        return False
+    try:
+        login(cfg["handle"], cfg["app_password"], pds=cfg["pds"], verbose=verbose)
+        return True
+    except (RuntimeError, requests.RequestException) as e:
+        print(f"ログインに失敗しました: {e}\n  公開ホスト（ログインなし）で続行します．bsky_config.ini の内容を確認してください．")
+        return False
+
+
+def _ensure_login() -> None:
+    """最初の API 呼び出し時に一度だけ，設定ファイルからログインを試みる．"""
+    if not _session["attempted"]:
+        login_from_config()
+
+
+def _refresh_session() -> bool:
+    """アクセストークンの期限切れ（約2時間）に対応して更新する．駄目なら再ログイン．"""
+    if _session.get("refresh_jwt"):
+        r = requests.post(f"{_session['pds']}/xrpc/com.atproto.server.refreshSession",
+                          headers={"Authorization": f"Bearer {_session['refresh_jwt']}",
+                                   "User-Agent": HEADERS["User-Agent"]}, timeout=20)
+        if r.status_code == 200:
+            s = r.json()
+            HEADERS["Authorization"] = f"Bearer {s['accessJwt']}"
+            _session["refresh_jwt"] = s.get("refreshJwt")
+            return True
+    cfg = _session.get("config")
+    if cfg:
+        try:
+            login(cfg["handle"], cfg["app_password"], pds=cfg["pds"], verbose=False)
+            return True
+        except Exception:
+            pass
+    return False
+
+
+def logout() -> None:
+    """ログイン状態を解除し，公開ホストに戻す（以後，自動ログインはしない）．"""
+    HOSTS[:] = list(PUBLIC_HOSTS)
+    HEADERS.pop("Authorization", None)
+    _session.update({"attempted": True, "logged_in": False, "handle": None, "refresh_jwt": None})
+    print("公開ホスト（ログインなし）に戻しました．")
+
+
+def login_status() -> dict:
+    """いまログインしているか，どのホストにアクセスするかを表示して返す．"""
+    _ensure_login()
+    st = {"logged_in": _session["logged_in"], "handle": _session["handle"], "hosts": list(HOSTS)}
+    if st["logged_in"]:
+        print(f"ログイン中: @{st['handle']}  アクセス先: {HOSTS[0]}")
+    else:
+        print(f"ログインなし（公開ホスト）: {HOSTS}  ※ 403 が出る場合は bsky_config.ini を設定してください")
+    return st
+
 
 # ----------------------------------------------------------------------
 # 低レベル：HTTP GET（ホスト切替・リトライ付き）
 # ----------------------------------------------------------------------
 
 def _get(endpoint: str, params: dict, timeout: int = 20, max_retries: int = 4) -> dict:
-    """公開APIに GET し，JSON（dict）を返す．
+    """APIに GET し，JSON（dict）を返す（ログイン中なら自分の PDS 経由，そうでなければ公開ホスト）．
 
     * 429（アクセス過多）のときは Retry-After 秒だけ待って再試行する．
     * 403（アクセス拒否）は同じホストで少し待って再試行し，それでも駄目なら次のホストを試す．
-      （2026-09 時点：未ログインの検索は，時間帯やサーバによって断続的に403を返すことがある）
+    * 401（トークン期限切れ）はセッションを更新して再試行する．
     """
+    _ensure_login()
     last_error = None
+    refreshed = False
     for host in HOSTS:
         url = f"{host}/xrpc/{endpoint}"
         for attempt in range(max_retries):
@@ -80,58 +222,19 @@ def _get(endpoint: str, params: dict, timeout: int = 20, max_retries: int = 4) -
                 last_error = RuntimeError(f"403 Forbidden: {host} {endpoint}")
                 time.sleep(1.5 * (attempt + 1))   # 1.5, 3, 4.5, 6 秒待って同じホストで再試行
                 continue
-            if r.status_code in (401,):
-                raise RuntimeError("認証が必要です（login() を実行するか，公開ホストを使ってください）")
+            if r.status_code == 401:
+                if _session["logged_in"] and not refreshed and _refresh_session():
+                    refreshed = True
+                    continue
+                raise RuntimeError("認証エラー（401）：bsky_config.ini のハンドル名・アプリパスワードを確認してください")
             # それ以外（400など）はパラメータの誤りが多いので内容を表示して停止
             try:
                 msg = r.json().get("message", r.text[:200])
             except Exception:
                 msg = r.text[:200]
             raise RuntimeError(f"APIエラー {r.status_code}: {msg}")
-    raise RuntimeError(f"Bluesky API にアクセスできませんでした: {last_error}")
-
-
-# ----------------------------------------------------------------------
-# （上級者向け・任意）ログインして使う
-# ----------------------------------------------------------------------
-
-def login(handle: str, app_password: str, pds: str = "https://bsky.social") -> dict:
-    """Blueskyアカウントでログインし，以後のAPIアクセスを認証付きにする（任意）．
-
-    アカウントなし（既定）と ありの違い
-      なし: 公開ホスト（api.bsky.app）を利用．1検索100件まで，cursor（続き）は不可，
-            同じネットワークからのアクセス集中で403が出やすい．準備不要で授業向き．
-      あり: 自分のPDS（bsky.social）経由でアクセス．cursor で続きを取得できる
-            （search_posts_paged），制限はアカウント単位でかかるので教室で同時に使っても
-            影響を受けにくい．自分のタイムライン等も取得可能．要アカウント＋アプリパスワード．
-
-    * app_password は Bluesky の「設定 → プライバシーとセキュリティ → アプリパスワード」で
-      発行した専用パスワード．通常のログインパスワードは絶対に使わない．コードや Notebook に
-      書き込まず，getpass で入力する： `login("xxx.bsky.social", getpass.getpass())`
-    * ログインしても取得できるのは公開投稿だけで，データの扱いのルールは変わらない．
-    ※ この関数は API 仕様書に基づいて実装しており，教材作成時には実アカウントで未検証．
-    """
-    r = requests.post(f"{pds}/xrpc/com.atproto.server.createSession",
-                      json={"identifier": handle, "password": app_password},
-                      headers=HEADERS, timeout=20)
-    if r.status_code != 200:
-        raise RuntimeError(f"ログイン失敗 {r.status_code}: {r.text[:200]}")
-    session = r.json()
-    endpoint = pds
-    for svc in (session.get("didDoc") or {}).get("service", []):
-        if svc.get("id", "").endswith("atproto_pds") and svc.get("serviceEndpoint"):
-            endpoint = svc["serviceEndpoint"]
-    HOSTS[:] = [endpoint]                      # 以後は自分のPDS経由でアクセス（AppViewへ中継される）
-    HEADERS["Authorization"] = f"Bearer {session['accessJwt']}"
-    print(f"ログインしました: {session.get('handle')}（アクセス先: {endpoint}）")
-    return {"handle": session.get("handle"), "did": session.get("did")}
-
-
-def logout() -> None:
-    """ログイン状態を解除し，公開ホストに戻す．"""
-    HOSTS[:] = ["https://api.bsky.app", "https://public.api.bsky.app"]
-    HEADERS.pop("Authorization", None)
-    print("公開ホストに戻しました．")
+    hint = "" if _session["logged_in"] else "\n  ログインなしの公開ホストは拒否されることがあります．bsky_config.ini を設定してください．"
+    raise RuntimeError(f"Bluesky API にアクセスできませんでした: {last_error}{hint}")
 
 
 # ----------------------------------------------------------------------
@@ -241,10 +344,11 @@ def search_posts(query: str, limit: int = 100, lang: str | None = "ja", sort: st
 def search_posts_paged(query: str, max_posts: int = 500, lang: str | None = "ja", sort: str = "latest",
                        since: str | None = None, until: str | None = None,
                        japanese_only: bool = True, pause: float = 0.5, verbose: bool = True) -> pd.DataFrame:
-    """cursor（続きの取得）を使って最大 max_posts 件まで検索する．
+    """cursor（続きの取得）を使って，新しい順に最大 max_posts 件まで検索する（標準の大量取得）．
 
-    未ログインの公開ホストでは2ページ目以降が拒否（403）されるため，
-    実質的に login() したときに使う関数．未ログインなら search_posts_by_period を使う．
+    ログインしていれば数千件まで連続取得できる．未ログインの公開ホストでは
+    2ページ目以降が拒否（403）されるので，その場合は search_posts_by_period を使う．
+    since / until を付ければ，期間内の投稿だけを新しい順に取得できる．
     """
     rows, cursor, page = [], None, 0
     while len(rows) < max_posts:
@@ -261,8 +365,8 @@ def search_posts_paged(query: str, max_posts: int = 500, lang: str | None = "ja"
             data = _get("app.bsky.feed.searchPosts", params, max_retries=4 if cursor is None else 2)
         except RuntimeError as e:
             if cursor is not None and "403" in str(e):
-                print("  2ページ目以降の取得が拒否されました．未ログインでは cursor が使えません．"
-                      "login() するか，search_posts_by_period() を使ってください．")
+                print("  2ページ目以降の取得が拒否されました．ログインなしでは cursor が使えません．"
+                      "bsky_config.ini を設定するか，search_posts_by_period() を使ってください．")
                 break
             raise
         posts = data.get("posts", [])
@@ -548,10 +652,15 @@ def jetstream_collect(seconds: int = 60, lang: str | None = "ja", keyword: str |
 # ----------------------------------------------------------------------
 
 DEFAULT_STOPWORDS = {
-    "する", "ある", "いる", "なる", "できる", "思う", "いう", "くる", "いく", "みる", "やる",
+    # どんな文にも出る動詞・形容詞（janome の原形）
+    "する", "ある", "いる", "なる", "できる", "思う", "いう", "言う", "くる", "来る", "いく", "行く",
+    "みる", "見る", "やる", "てる", "れる", "られる", "せる", "ない", "いい", "よい", "すぎる", "しまう",
+    "出る", "入る", "くださる", "ください", "ござる", "おる", "ちゃう",
+    # 形式名詞・代名詞など
     "こと", "もの", "これ", "それ", "あれ", "ため", "よう", "さん", "ちゃん", "くん",
     "私", "自分", "今日", "今", "人", "的", "そう", "ん", "の", "みたい", "感じ", "とき", "何",
-    "http", "https", "www", "com", "jp", "amp", "rt",
+    # URL・記号の断片
+    "http", "https", "www", "com", "jp", "amp", "rt", "[...]", "...", "co",
 }
 
 _tokenizer = None
@@ -616,5 +725,6 @@ __all__ = [
     "get_replies", "get_trending_topics", "save_posts", "load_posts", "anonymize", "clean_text",
     "download_images", "jetstream_collect", "tokenize", "DEFAULT_STOPWORDS",
     "japanese_font_path", "set_japanese_font", "posts_to_dataframe", "add_datetime_columns",
-    "stable_hash", "login", "logout", "HOSTS",
+    "stable_hash", "login", "login_from_config", "login_status", "logout", "load_config",
+    "HOSTS", "CONFIG_PATH",
 ]

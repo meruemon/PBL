@@ -8,7 +8,7 @@
 | テーマ | 何ができるようになるか | 主な道具 |
 |---|---|---|
 | **① 画像認識** | カメラ映像から人・顔・物体を検出し，数えて，分析するアプリを作る | OpenCV，MediaPipe，YOLOv5 |
-| **② SNS分析** | SNS（Bluesky）から投稿文と画像を集め，話題・反応・時間変化を分析する | Bluesky公開API，janome，scikit-learn，YOLOv5 |
+| **② SNS分析** | SNS（Bluesky）から投稿文と画像を集め，話題・反応・時間変化を分析する | Bluesky API，janome，scikit-learn，YOLOv5 |
 
 どちらのテーマも **「データ取得 → 加工・可視化 → 機械学習・深層学習」** の3回の基礎演習で道具を身につけ，その後の10回でプロジェクトを行います．
 2つのテーマは組み合わせても構いません（例：SNSの投稿画像に物体検出をかける）．
@@ -59,7 +59,7 @@ jupyter notebook
 Notebook と `.py` スクリプトの使い分けは [docs/02_jupyter_and_python.md](docs/02_jupyter_and_python.md) を見てください．
 
 > **画像認識テーマの人へ**：演習用の動画・モデルが別途必要です．[image_recognition/README.md](image_recognition/README.md) の「事前準備」（自動ダウンロードと Dropbox 配布ファイル）を先に済ませてください．
-> **SNS分析テーマの人へ**：追加の準備は不要です．APIキーやアカウント登録もいりません（Bluesky アカウントでログインして使う方法は任意の発展として用意しています）．[sns_analysis/README.md](sns_analysis/README.md) を読んでから始めてください．
+> **SNS分析テーマの人へ**：無料の Bluesky アカウントと「アプリパスワード」が必要です．[sns_analysis/README.md](sns_analysis/README.md) の「事前準備」に従って `bsky_config.ini` を作ってから始めてください（有料の API キー申請はありません）．
 
 ---
 
@@ -87,7 +87,8 @@ PBL2026/
 │   └── data/                     ← 画像・動画置き場（Git管理外）
 ├── sns_analysis/                 ← テーマ② SNS分析
 │   ├── README.md
-│   ├── bsky_utils.py             ← Bluesky 取得・前処理の共通モジュール
+│   ├── bsky_utils.py             ← Bluesky 取得・前処理の共通モジュール（設定ファイルから自動ログイン）
+│   ├── bsky_config.example.ini   ← アカウント設定の雛形（コピーして bsky_config.ini を作る）
 │   ├── 01_bluesky_collection.ipynb   ← 第2回：投稿・アカウント・返信・画像の取得
 │   ├── 02_text_visualization.ipynb   ← 第3回：形態素解析，頻出語，時系列，共起，TF-IDF
 │   ├── 03_machine_learning.ipynb     ← 第4回：分類器の学習・適用，クラスタリング，画像の物体検出

@@ -1,3 +1,7 @@
+# Bluesky のアカウント情報（絶対に公開しない）
+sns_analysis/bsky_config.ini
+**/bsky_config.ini
+
 # 取得したデータ・画像・モデルは公開しない（授業内のみで利用）
 sns_analysis/data/
 image_recognition/data/*

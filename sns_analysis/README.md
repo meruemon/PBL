@@ -1,12 +1,12 @@
 # テーマ② SNS分析：Bluesky の投稿文と画像から「社会の声」を分析する
 
-SNS「Bluesky」の **公開API** から投稿（本文・日時・反応数・画像）を集め，日本語テキストマイニング・可視化・機械学習で分析するプロジェクトを行います．
-APIキーやアカウント登録は **不要** です．Python と `requests` だけで取得できます．
+SNS「Bluesky」の API から投稿（本文・日時・反応数・画像）を集め，日本語テキストマイニング・可視化・機械学習で分析するプロジェクトを行います．
+有料の API キー申請は不要です．**無料の Bluesky アカウント**と「アプリパスワード」を設定ファイルに書くだけで，Python と `requests` で取得できます．
 
 ## なぜ Bluesky か
 
 - X（旧Twitter）の API は有料化・制限強化が進み，授業で使いにくくなった．
-- Bluesky は公開投稿を **ログインなしで** 取得でき，本文・日時・反応数・画像・言語タグを同じ形式で扱える．
+- Bluesky は無料アカウントで公開投稿を取得でき，本文・日時・反応数・画像・言語タグを同じ形式で扱える．
 - 日本語ユーザが多く，防災・地域・趣味・ニュースなど幅広い話題がある．
 - リアルタイムに全投稿が流れる仕組み（Jetstream）もあり，「いま何件流れているか」を観測できる．
 
@@ -23,7 +23,25 @@ API に接続できない場合は `sample_data/`（授業用の合成データ�
 
 ## 事前準備
 
-[../docs/01_anaconda_setup.md](../docs/01_anaconda_setup.md) の手順で `pbl2026` 環境を作るだけです．
+### 1. Python 環境
+
+[../docs/01_anaconda_setup.md](../docs/01_anaconda_setup.md) の手順で `pbl2026` 環境を作ります．
+
+### 2. Bluesky アカウントと設定ファイル（第2回までに）
+
+1. アカウントを持っていなければ https://bsky.app で作成する（無料．メールアドレスが必要）．
+2. Bluesky の **設定 → プライバシーとセキュリティ → アプリパスワード → アプリパスワードを追加** で発行し，表示された `xxxx-xxxx-xxxx-xxxx` を控える（この画面でしか表示されない）．**通常のログインパスワードは使わない**．
+3. `sns_analysis/bsky_config.example.ini` をコピーして `sns_analysis/bsky_config.ini` を作り，`handle` と `app_password` を自分のものに書き換える．
+
+```ini
+[bluesky]
+handle = your-name.bsky.social
+app_password = xxxx-xxxx-xxxx-xxxx
+```
+
+`bsky_config.ini` は `.gitignore` に登録済みです（GitHub に上がりません）．他人に見せない・共有しないでください．
+Windows でファイル名が `bsky_config.ini.ini` や `bsky_config.ini.txt` になってしまう場合は，エクスプローラーの「表示 → ファイル名拡張子」をオンにして直してください．
+Notebook や scripts を実行すると，`bsky_utils` が最初の API 呼び出し時に自動でログインします．
 
 ```bash
 conda activate pbl2026
@@ -39,6 +57,8 @@ jupyter notebook
 sns_analysis/
 ├── 01_bluesky_collection.ipynb / 02_text_visualization.ipynb / 03_machine_learning.ipynb
 ├── bsky_utils.py                 取得・保存・前処理の共通モジュール（Notebook から import）
+├── bsky_config.example.ini       アカウント設定の雛形（コピーして bsky_config.ini を作る）
+├── bsky_config.ini               自分のハンドル名とアプリパスワード（Git 管理外）
 ├── scripts/
 │   └── collect_posts.py          ターミナルから投稿をまとめて収集（プロジェクト用）
 ├── sample_data/
@@ -55,9 +75,10 @@ sns_analysis/
 
 | 関数 | 役割 |
 |---|---|
+| `login_status()` | ログインできているかを表示 |
 | `search_posts(query, limit, sort, lang, since, until)` | キーワード検索（1回最大100件） |
-| `search_posts_by_period(query, days, hours_per_window)` | 期間を分割して大量取得（アカウント不要） |
-| `search_posts_paged(query, max_posts)` | cursor で続きを連続取得（`login` 後に使う） |
+| `search_posts_paged(query, max_posts, since, until)` | cursor で続きを連続取得（標準の大量取得．要ログイン） |
+| `search_posts_by_period(query, days, hours_per_window)` | 期間を分割して取得（ログインなしでも動く） |
 | `search_actors(query)` / `get_profile(handle)` | アカウント検索・プロフィール |
 | `get_author_posts(handle, max_posts)` | 特定アカウントの投稿 |
 | `get_replies(post_uri)` | 投稿への返信スレッド |
@@ -67,36 +88,39 @@ sns_analysis/
 | `tokenize(text, pos, stopwords)` | 日本語の形態素解析（原形・品詞フィルタ） |
 | `anonymize(df)` | 発表用に投稿者・URL列を落とす |
 | `set_japanese_font()` / `japanese_font_path()` | グラフ・ワードクラウドの日本語フォント |
-| `login(handle, app_password)` / `logout()` | （任意）アカウントでログインして取得を安定させる／公開ホストに戻す |
+| `login(handle, app_password)` / `login_from_config()` / `logout()` | 手動ログイン／設定ファイルからログイン／公開ホストに戻す（通常は自動なので不要） |
 
 ## スクリプトの使い方
 
 ```bash
 cd sns_analysis
-python scripts/collect_posts.py --query 防災 --days 7 --window 6 --out data/bosai.csv
-python scripts/collect_posts.py --query 防災 --query 観光 --days 3 --window 12 --out data/posts.csv
+python scripts/collect_posts.py --query 防災 --max 1000 --out data/bosai.csv
+python scripts/collect_posts.py --query 防災 --query 観光 --max 500 --out data/posts.csv
+python scripts/collect_posts.py --query 防災 --method period --days 7 --window 6 --out data/bosai.csv
 python scripts/collect_posts.py --author chunichi.bsky.social --max 300 --out data/chunichi.csv
 ```
 
-## アカウントなし／ありの違い（任意でログインして使える）
+## ログインなし／ありの違い
 
-授業の演習は **アカウントなし**（公開ホスト）で完結します．プロジェクトで数千件以上を連続取得したいときや，教室で同時にアクセスして 403 が頻発するときは，自分の Bluesky アカウントでログインして使えます（第2回 Notebook の 10 節に例があります）．
+`bsky_config.ini` が無い，またはログインに失敗したときは，`bsky_utils` は **ログインなしの公開ホスト**にフォールバックします（その旨を表示します）．ただし公開ホストには次の制約があるため，授業では **アカウントでログインして使うのを標準** とします．
 
-| | アカウントなし（既定） | アカウントあり（`login()`） |
+| | ログインなし（公開ホスト） | ログインあり（標準） |
 |---|---|---|
-| 事前準備 | 不要 | Bluesky アカウント＋アプリパスワード |
+| 事前準備 | 不要 | 無料アカウント＋アプリパスワード（`bsky_config.ini`） |
+| アクセス先 | `api.bsky.app` | 自分のサーバ `bsky.social`（公開データに中継） |
 | 1回の検索 | 最大100件 | 最大100件 |
-| 続きの取得（cursor） | 不可 → 期間分割（`search_posts_by_period`） | 可 → `search_posts_paged` |
-| アクセス制限 | 送信元ネットワーク単位（教室で共有） | アカウント単位 |
+| 続きの取得（cursor） | 拒否される（403）→ `search_posts_by_period` で期間分割 | 可 → `search_posts_paged` で数千件まで |
+| アクセス制限 | 送信元ネットワーク単位．**学内から拒否されることがある** | アカウント単位．教室で同時に使っても影響を受けにくい |
 | 取得できる範囲 | 公開投稿・公開プロフィール | 同じ（＋自分のタイムライン等） |
+| 責任 | ― | 自分のアカウントでのアクセスとして記録される．利用規約を守る |
 
-- アプリパスワードは 設定 → プライバシーとセキュリティ → アプリパスワード で発行します．**通常のパスワードは絶対に使わない**．Notebook に書き込まず `getpass` で入力します．
 - ログインしても取得できるのは公開投稿だけです．データの扱いのルール（下記）は変わりません．
+- アプリパスワードは自分だけの秘密です．Notebook やコードに書かない．漏れたと思ったら Bluesky の設定画面で削除して発行し直す．
 
-## 公開APIの制約（2026年9月時点）と対処
+## API の制約（2026年9月時点）と対処
 
-- 検索は **1回100件まで**．ページング（続きの取得）は未ログインでは拒否される．→ `since/until` で期間を分割して取得する（`search_posts_by_period`）．
-- 同じ場所（学内ネットワーク）から短時間に多数アクセスすると **403** が返ることがある．→ `bsky_utils` が自動で待って再試行する．それでも失敗する窓は，あとで同じ条件で再実行して足す．
+- 検索は **1回100件まで**．続きは cursor で取得する（`search_posts_paged`）．ログインなしでは cursor が拒否される．
+- 短時間に多数アクセスすると **429 / 403** が返ることがある．→ `bsky_utils` が自動で待って再試行する．ログインの期限（約2時間）が切れたときも自動で更新する．
 - 反応数は **取得した時点の値**．同じ投稿でも時間が経てば変わる．→ 取得日時を必ず記録し，比較は同じ日に同じ条件で行う．
 - 検索結果は無作為標本ではない（検索エンジンの並び順や言語判定の影響を受ける）．→ 「何を代表していて，何を代表していないか」を発表で述べる．
 - 仕様は変わり得る．→ 変更があれば `bsky_utils.py` だけを直せば Notebook はそのまま動く設計にしている．

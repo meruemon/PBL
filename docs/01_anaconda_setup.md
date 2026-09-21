@@ -111,7 +111,12 @@ jupyter notebook
 ブラウザが自動で開き，フォルダ一覧が表示されます．`image_recognition` または `sns_analysis` を開いて，`01_...ipynb` をクリックしてください．
 終了するときは Anaconda Prompt で `Ctrl + C` を押します．
 
-## 7. インストールされる主なライブラリ
+## 7. テーマ別の追加準備
+
+- **画像認識**：`image_recognition/README.md` の「事前準備」（`download_assets.py` の実行と Dropbox 配布ファイルの配置）．
+- **SNS分析**：Bluesky の無料アカウントを作り，アプリパスワードを発行して `sns_analysis/bsky_config.ini` に記入する（`sns_analysis/README.md` の「事前準備」）．
+
+## 8. インストールされる主なライブラリ
 
 | ライブラリ | 役割 | テーマ |
 |---|---|---|
