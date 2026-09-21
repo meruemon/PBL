@@ -15,7 +15,7 @@ SNS「Bluesky」の API から投稿（本文・日時・反応数・画像）�
 | 回 | Notebook | 内容 |
 |---|---|---|
 | 第2回 | [01_bluesky_collection.ipynb](01_bluesky_collection.ipynb) | キーワード検索，反応順・ハッシュタグ，期間分割で大量取得，アカウントの投稿，返信スレッド，CSV保存と取得条件の記録，画像ダウンロード，Jetstream |
-| 第3回 | [02_text_visualization.ipynb](02_text_visualization.ipynb) | 形態素解析（janome），頻出語，ストップワード，ワードクラウド，日別・時間帯別の投稿数，語の推移，反応数の分布，共起ネットワーク，TF-IDF による特徴語比較 |
+| 第3回 | [02_text_visualization.ipynb](02_text_visualization.ipynb) | 形態素解析（janome），前処理の切り替え（品詞・細分類・ひらがな・ストップワードのプリセット），頻出語，ワードクラウド，日別・時間帯別の投稿数，語の推移，反応数の分布，共起ネットワーク，TF-IDF による特徴語比較 |
 | 第4回 | [03_machine_learning.ipynb](03_machine_learning.ipynb) | 教師あり分類（学習・評価・根拠の確認），自分でラベル付けしたデータからの分類器作成と全投稿への適用，K-means クラスタリング，YOLOv5 による投稿画像の物体検出 |
 
 演習は **課題ではありません**．上から順に実行して結果を確認し，検索語やパラメータを変えて挙動を観察してください．
@@ -57,6 +57,7 @@ jupyter notebook
 sns_analysis/
 ├── 01_bluesky_collection.ipynb / 02_text_visualization.ipynb / 03_machine_learning.ipynb
 ├── bsky_utils.py                 取得・保存・前処理の共通モジュール（Notebook から import）
+├── stopwords_ja.txt              ストップワード（1行1語．自由に追加・削除）
 ├── bsky_config.example.ini       アカウント設定の雛形（コピーして bsky_config.ini を作る）
 ├── bsky_config.ini               自分のハンドル名とアプリパスワード（Git 管理外）
 ├── scripts/
@@ -85,7 +86,9 @@ sns_analysis/
 | `jetstream_collect(seconds, keyword)` | リアルタイムに流れる投稿を観測 |
 | `save_posts(df, path)` / `load_posts(path)` | CSV 保存（取得条件のメモ付き）・読み込み |
 | `download_images(df, out_dir, max_posts)` | 投稿画像の保存 |
-| `tokenize(text, pos, stopwords)` | 日本語の形態素解析（原形・品詞フィルタ） |
+| `tokenize(text, preset, extra_stopwords, ...)` | 日本語の形態素解析．前処理はプリセット（`content` / `nouns` / `nouns_adj` / `raw`）と個別オプション（品詞，細分類除外，短いひらがな，ストップワード）で切り替え |
+| `explain_tokens(text, preset, ...)` | 1文の各語が残ったか・落ちた理由を表で表示（前処理の確認用） |
+| `load_stopwords()` / `STOPWORDS_PATH` | `stopwords_ja.txt`（1行1語）を読み直す |
 | `anonymize(df)` | 発表用に投稿者・URL列を落とす |
 | `set_japanese_font()` / `japanese_font_path()` | グラフ・ワードクラウドの日本語フォント |
 | `login(handle, app_password)` / `login_from_config()` / `logout()` | 手動ログイン／設定ファイルからログイン／公開ホストに戻す（通常は自動なので不要） |

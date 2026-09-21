@@ -651,43 +651,150 @@ def jetstream_collect(seconds: int = 60, lang: str | None = "ja", keyword: str |
 # 日本語テキスト処理（janome）と日本語フォント
 # ----------------------------------------------------------------------
 
-DEFAULT_STOPWORDS = {
-    # どんな文にも出る動詞・形容詞（janome の原形）
-    "する", "ある", "いる", "なる", "できる", "思う", "いう", "言う", "くる", "来る", "いく", "行く",
+# ----------------------------------------------------------------------
+# 日本語テキスト処理（janome）
+#   前処理は「プリセット」と「個別オプション」で切り替えられる．
+#   1. 品詞（大分類）で残す語を選ぶ                  pos
+#   2. 品詞の細分類で意味の薄い語を落とす            exclude_detail（非自立動詞「てる」，接尾「れる」，非自立形容詞「ない/ほしい」など）
+#   3. 短いひらがなだけの語を落とす                  max_hiragana_len
+#   4. ストップワード（stopwords_ja.txt ＋ 追加語）   stopwords / extra_stopwords
+# ----------------------------------------------------------------------
+
+STOPWORDS_PATH = Path(__file__).resolve().parent / "stopwords_ja.txt"
+
+# ファイルが無いときのための最小限のストップワード
+BUILTIN_STOPWORDS = {
+    "する", "ある", "いる", "なる", "できる", "思う", "いう", "言う", "くる", "来る", "いく", "行く", "行う",
     "みる", "見る", "やる", "てる", "れる", "られる", "せる", "ない", "いい", "よい", "すぎる", "しまう",
     "出る", "入る", "くださる", "ください", "ござる", "おる", "ちゃう",
-    # 形式名詞・代名詞など
     "こと", "もの", "これ", "それ", "あれ", "ため", "よう", "さん", "ちゃん", "くん",
     "私", "自分", "今日", "今", "人", "的", "そう", "ん", "の", "みたい", "感じ", "とき", "何",
-    # URL・記号の断片
     "http", "https", "www", "com", "jp", "amp", "rt", "[...]", "...", "co",
 }
 
+
+def load_stopwords(path: str | Path = STOPWORDS_PATH) -> set[str]:
+    """ストップワードファイル（1行1語，# はコメント）を読み込む．無ければ内蔵の最小セットを返す．"""
+    path = Path(path)
+    words = set(BUILTIN_STOPWORDS)
+    if path.exists():
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.split("#", 1)[0].strip()
+            if line:
+                words.add(line)
+    return words
+
+
+DEFAULT_STOPWORDS = load_stopwords()
+
+# 品詞の細分類による除外（(大分類, 細分類1) の組）
+EXCLUDE_DETAIL_DEFAULT = {
+    ("名詞", "数"), ("名詞", "非自立"), ("名詞", "代名詞"), ("名詞", "接尾"), ("名詞", "特殊"),
+    ("動詞", "非自立"),      # てる，ください，すぎる，みる，しまう など（補助動詞）
+    ("動詞", "接尾"),        # れる，られる，せる
+    ("形容詞", "非自立"),    # ない，ほしい，にくい，やすい
+}
+
+# プリセット：用途に応じて切り替える
+TOKENIZE_PRESETS = {
+    # 標準：内容語（名詞・動詞・形容詞）から意味の薄い語を除く
+    "content": dict(pos=("名詞", "動詞", "形容詞"), exclude_detail=EXCLUDE_DETAIL_DEFAULT,
+                    max_hiragana_len=2, min_len=2, use_stopwords=True),
+    # 名詞だけ：話題（何について語られているか）を見るとき
+    "nouns": dict(pos=("名詞",), exclude_detail=EXCLUDE_DETAIL_DEFAULT,
+                  max_hiragana_len=2, min_len=2, use_stopwords=True),
+    # 名詞＋形容詞：評価・感想の語も見たいとき
+    "nouns_adj": dict(pos=("名詞", "形容詞"), exclude_detail=EXCLUDE_DETAIL_DEFAULT,
+                      max_hiragana_len=2, min_len=2, use_stopwords=True),
+    # 生：ほとんど落とさない（前処理の効果を比べるとき用）
+    "raw": dict(pos=("名詞", "動詞", "形容詞", "副詞", "感動詞"), exclude_detail=set(),
+                max_hiragana_len=0, min_len=1, use_stopwords=False),
+}
+
 _tokenizer = None
+_HIRAGANA_ONLY_RE = re.compile(r"^[぀-ゟー]+$")
 
 
-def tokenize(text: str, pos=("名詞", "動詞", "形容詞"), stopwords=DEFAULT_STOPWORDS,
-             min_len: int = 2, use_base_form: bool = True) -> list[str]:
-    """日本語の文を単語（原形）のリストにする．
-
-    pos : 残す品詞（先頭の分類で判定）．("名詞",) にすると名詞だけになる．
-    """
+def _get_tokenizer():
     global _tokenizer
     if _tokenizer is None:
         from janome.tokenizer import Tokenizer
         _tokenizer = Tokenizer()
+    return _tokenizer
+
+
+def _resolve_options(preset, pos, stopwords, extra_stopwords, min_len, max_hiragana_len, exclude_detail):
+    """プリセットの設定に，個別に指定されたオプションを上書きして返す．"""
+    if preset not in TOKENIZE_PRESETS:
+        raise ValueError(f"preset は {list(TOKENIZE_PRESETS)} のいずれか: {preset}")
+    opt = dict(TOKENIZE_PRESETS[preset])
+    if pos is not None:
+        opt["pos"] = tuple(pos)
+    if min_len is not None:
+        opt["min_len"] = min_len
+    if max_hiragana_len is not None:
+        opt["max_hiragana_len"] = max_hiragana_len
+    if exclude_detail is not None:
+        opt["exclude_detail"] = set(exclude_detail)
+    if stopwords is not None:
+        opt["stopwords"] = set(stopwords)
+    else:
+        opt["stopwords"] = set(DEFAULT_STOPWORDS) if opt["use_stopwords"] else set()
+    opt["stopwords"] |= set(extra_stopwords or ())
+    return opt
+
+
+def _judge(tok, opt, use_base_form=True):
+    """1トークンを残すか判定し，(語, 残すか, 理由) を返す．"""
+    p = tok.part_of_speech.split(",")
+    w = tok.base_form if (use_base_form and tok.base_form != "*") else tok.surface
+    if p[0] not in opt["pos"]:
+        return w, False, f"品詞 {p[0]}"
+    if (p[0], p[1]) in opt["exclude_detail"]:
+        return w, False, f"細分類 {p[0]}-{p[1]}"
+    if w.isdigit():
+        return w, False, "数字"
+    if len(w) < opt["min_len"]:
+        return w, False, f"{opt['min_len']}文字未満"
+    if opt["max_hiragana_len"] and len(w) <= opt["max_hiragana_len"] and _HIRAGANA_ONLY_RE.match(w):
+        return w, False, "短いひらがな"
+    if w in opt["stopwords"]:
+        return w, False, "ストップワード"
+    return w, True, ""
+
+
+def tokenize(text: str, preset: str = "content", pos=None, stopwords=None, extra_stopwords=(),
+             min_len: int | None = None, max_hiragana_len: int | None = None,
+             exclude_detail=None, use_base_form: bool = True) -> list[str]:
+    """日本語の文を単語（原形）のリストにする．前処理はプリセットとオプションで切り替える．
+
+    preset          : "content"（標準）, "nouns"（名詞のみ）, "nouns_adj", "raw"（ほぼ落とさない）
+    pos             : 残す品詞の大分類．例 ("名詞",)
+    stopwords       : ストップワード集合を丸ごと差し替える（None ならファイル＋内蔵）
+    extra_stopwords : 既定に追加する語（検索語そのものなど）
+    min_len         : この文字数未満の語を落とす
+    max_hiragana_len: この長さ以下の「ひらがなだけ」の語を落とす（0 で無効）
+    exclude_detail  : 落とす品詞細分類の集合．例 {("動詞","非自立")}．set() で無効
+    """
+    opt = _resolve_options(preset, pos, stopwords, extra_stopwords, min_len, max_hiragana_len, exclude_detail)
     words = []
-    for tok in _tokenizer.tokenize(clean_text(text)):
-        p = tok.part_of_speech.split(",")
-        if p[0] not in pos:
-            continue
-        if p[0] == "名詞" and p[1] in ("数", "非自立", "代名詞", "接尾"):
-            continue
-        w = tok.base_form if (use_base_form and tok.base_form != "*") else tok.surface
-        if len(w) < min_len or w in stopwords or w.isdigit():
-            continue
-        words.append(w)
+    for tok in _get_tokenizer().tokenize(clean_text(text)):
+        w, keep, _ = _judge(tok, opt, use_base_form)
+        if keep:
+            words.append(w)
     return words
+
+
+def explain_tokens(text: str, preset: str = "content", **options) -> pd.DataFrame:
+    """1文について，各トークンが「残った／落ちた（理由）」を表で返す（前処理の効果を確かめる用）．"""
+    opt = _resolve_options(preset, options.get("pos"), options.get("stopwords"), options.get("extra_stopwords", ()),
+                           options.get("min_len"), options.get("max_hiragana_len"), options.get("exclude_detail"))
+    rows = []
+    for tok in _get_tokenizer().tokenize(clean_text(text)):
+        w, keep, why = _judge(tok, opt, options.get("use_base_form", True))
+        rows.append({"表層形": tok.surface, "原形": w, "品詞": tok.part_of_speech.replace(",*", ""),
+                     "残す": "○" if keep else "", "落とす理由": why})
+    return pd.DataFrame(rows)
 
 
 def japanese_font_path() -> str | None:
@@ -723,7 +830,8 @@ def set_japanese_font() -> str | None:
 __all__ = [
     "search_posts", "search_posts_by_period", "search_posts_paged", "get_profile", "search_actors", "get_author_posts",
     "get_replies", "get_trending_topics", "save_posts", "load_posts", "anonymize", "clean_text",
-    "download_images", "jetstream_collect", "tokenize", "DEFAULT_STOPWORDS",
+    "download_images", "jetstream_collect", "tokenize", "explain_tokens", "load_stopwords",
+    "DEFAULT_STOPWORDS", "TOKENIZE_PRESETS", "EXCLUDE_DETAIL_DEFAULT", "STOPWORDS_PATH",
     "japanese_font_path", "set_japanese_font", "posts_to_dataframe", "add_datetime_columns",
     "stable_hash", "login", "login_from_config", "login_status", "logout", "load_config",
     "HOSTS", "CONFIG_PATH",
