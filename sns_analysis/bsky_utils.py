@@ -556,11 +556,17 @@ def clean_text(text: str) -> str:
 # ----------------------------------------------------------------------
 
 def download_images(df: pd.DataFrame, out_dir: str | Path = "data/images", max_posts: int = 30,
-                    size: str = "thumb", pause: float = 0.3) -> pd.DataFrame:
-    """画像付き投稿の1枚目の画像を保存し，[post_id, image_path] の表を返す．
+                    size: str = "thumb", all_images: bool = True, max_images: int | None = None,
+                    pause: float = 0.3, verbose: bool = True) -> pd.DataFrame:
+    """画像付き投稿の画像を保存し，1枚1行の表（post_id, image_index, image_path, alt, width, height, bytes）を返す．
 
-    size : "thumb"（小さい・速い）または "fullsize"
-    画像は webp 形式で届くので JPEG に変換して保存する．
+    max_posts  : 画像を取りに行く投稿数の上限（投稿の並び順で先頭から）
+    size       : "thumb"（長辺 1000px 程度・数十KB．分析用途はこれで十分）または "fullsize"（最大 2000px・数百KB）
+    all_images : True なら投稿に付いた画像を全部（最大4枚），False なら1枚目だけ
+    max_images : 保存する総枚数の上限（None なら無制限）
+    * 画像は webp 形式で届くので JPEG に変換して保存する．ファイル名は {post_id}_{番号}.jpg
+    * すでに保存済みのファイルは再取得しない（何度実行してもよい）
+    * 一覧を out_dir/images.csv に書き出す（第4回の物体検出で使う）
     """
     from PIL import Image
     from io import BytesIO
@@ -569,26 +575,70 @@ def download_images(df: pd.DataFrame, out_dir: str | Path = "data/images", max_p
     out_dir.mkdir(parents=True, exist_ok=True)
     col = "image_thumbs" if size == "thumb" else "image_urls"
     target = df[df["image_count"].fillna(0) > 0].head(max_posts)
-    rows = []
+    rows, n_new, n_fail = [], 0, 0
     for _, row in target.iterrows():
-        url = str(row[col]).split("|")[0]
-        if not url:
-            continue
-        out_path = out_dir / f"{row['post_id']}.jpg"
-        if not out_path.exists():
+        urls = [u for u in str(row.get(col, "") or "").split("|") if u]
+        alts = str(row.get("image_alts", "") or "").split("|")
+        if not all_images:
+            urls = urls[:1]
+        for k, url in enumerate(urls, start=1):
+            if max_images is not None and len(rows) >= max_images:
+                break
+            out_path = out_dir / f"{row['post_id']}_{k}.jpg"
+            if not out_path.exists():
+                try:
+                    r = requests.get(url, headers={"User-Agent": HEADERS["User-Agent"]}, timeout=20)
+                    r.raise_for_status()
+                    Image.open(BytesIO(r.content)).convert("RGB").save(out_path, "JPEG", quality=90)
+                    n_new += 1
+                    time.sleep(pause)
+                except Exception as e:
+                    n_fail += 1
+                    if verbose:
+                        print(f"  取得失敗: {row['post_id']} 画像{k} {e}")
+                    continue
             try:
-                r = requests.get(url, headers=HEADERS, timeout=20)
-                r.raise_for_status()
-                Image.open(BytesIO(r.content)).convert("RGB").save(out_path, "JPEG", quality=90)
-                time.sleep(pause)
-            except Exception as e:
-                print(f"  取得失敗: {row['post_id']} {e}")
-                continue
-        rows.append({"post_id": row["post_id"], "image_path": str(out_path)})
-    images = pd.DataFrame(rows)
+                with Image.open(out_path) as im:
+                    w, h = im.size
+            except Exception:
+                w = h = 0
+            rows.append({"post_id": row["post_id"], "image_index": k, "image_path": str(out_path),
+                         "alt": alts[k - 1] if k - 1 < len(alts) else "",
+                         "width": w, "height": h, "bytes": out_path.stat().st_size, "size": size})
+    images = pd.DataFrame(rows, columns=["post_id", "image_index", "image_path", "alt", "width", "height", "bytes", "size"])
     images.to_csv(out_dir / "images.csv", index=False, encoding="utf-8-sig")
-    print(f"画像 {len(images)} 枚を {out_dir} に保存しました．")
+    if verbose:
+        mb = images["bytes"].sum() / 1e6 if len(images) else 0
+        print(f"画像 {len(images)} 枚（{images['post_id'].nunique()} 投稿，新規 {n_new} 枚，失敗 {n_fail} 枚，合計 {mb:.1f} MB）→ {out_dir}/")
     return images
+
+
+def show_images(images: pd.DataFrame, n: int = 12, cols: int = 4, caption: str | None = "alt",
+                figsize_per: float = 3.0):
+    """download_images() の結果を格子状に表示する（Notebook 用）．caption に列名を指定するとその文字列を添える．"""
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from PIL import Image
+
+    sub = images.head(n)
+    if not len(sub):
+        print("表示する画像がありません．")
+        return
+    rows_n = (len(sub) + cols - 1) // cols
+    fig, axes = plt.subplots(rows_n, cols, figsize=(figsize_per * cols, figsize_per * rows_n))
+    axes = list(np.atleast_1d(axes).ravel())
+    for ax, (_, r) in zip(axes, sub.iterrows()):
+        try:
+            ax.imshow(Image.open(r["image_path"]))
+        except Exception:
+            ax.text(0.5, 0.5, "読み込めません", ha="center")
+        title = str(r.get(caption, "") or "")[:28] if caption else ""
+        ax.set_title(title or r["post_id"], fontsize=8)
+        ax.axis("off")
+    for ax in axes[len(sub):]:
+        ax.axis("off")
+    plt.tight_layout()
+    plt.show()
 
 
 # ----------------------------------------------------------------------
@@ -830,7 +880,7 @@ def set_japanese_font() -> str | None:
 __all__ = [
     "search_posts", "search_posts_by_period", "search_posts_paged", "get_profile", "search_actors", "get_author_posts",
     "get_replies", "get_trending_topics", "save_posts", "load_posts", "anonymize", "clean_text",
-    "download_images", "jetstream_collect", "tokenize", "explain_tokens", "load_stopwords",
+    "download_images", "show_images", "jetstream_collect", "tokenize", "explain_tokens", "load_stopwords",
     "DEFAULT_STOPWORDS", "TOKENIZE_PRESETS", "EXCLUDE_DETAIL_DEFAULT", "STOPWORDS_PATH",
     "japanese_font_path", "set_japanese_font", "posts_to_dataframe", "add_datetime_columns",
     "stable_hash", "login", "login_from_config", "login_status", "logout", "load_config",

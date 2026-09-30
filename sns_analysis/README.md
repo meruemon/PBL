@@ -14,7 +14,7 @@ SNS「Bluesky」の API から投稿（本文・日時・反応数・画像）�
 
 | 回 | Notebook | 内容 |
 |---|---|---|
-| 第2回 | [01_bluesky_collection.ipynb](01_bluesky_collection.ipynb) | キーワード検索，反応順・ハッシュタグ，期間分割で大量取得，アカウントの投稿，返信スレッド，CSV保存と取得条件の記録，画像ダウンロード，Jetstream |
+| 第2回 | [01_bluesky_collection.ipynb](01_bluesky_collection.ipynb) | アカウント設定，キーワード検索，反応順・ハッシュタグ，cursor・期間分割で大量取得，アカウントの投稿，返信スレッド，CSV保存と取得条件の記録，画像ダウンロード（複数枚・代替テキスト・縮小版と原寸・一覧表示・スクリプト），Jetstream |
 | 第3回 | [02_text_visualization.ipynb](02_text_visualization.ipynb) | 形態素解析（janome），前処理の切り替え（品詞・細分類・ひらがな・ストップワードのプリセット），頻出語，ワードクラウド，日別・時間帯別の投稿数，語の推移，反応数の分布，共起ネットワーク，TF-IDF による特徴語比較 |
 | 第4回 | [03_machine_learning.ipynb](03_machine_learning.ipynb) | 教師あり分類（学習・評価・根拠の確認），自分でラベル付けしたデータからの分類器作成と全投稿への適用，K-means クラスタリング，YOLOv5 による投稿画像の物体検出 |
 
@@ -61,7 +61,8 @@ sns_analysis/
 ├── bsky_config.example.ini       アカウント設定の雛形（コピーして bsky_config.ini を作る）
 ├── bsky_config.ini               自分のハンドル名とアプリパスワード（Git 管理外）
 ├── scripts/
-│   └── collect_posts.py          ターミナルから投稿をまとめて収集（プロジェクト用）
+│   ├── collect_posts.py          ターミナルから投稿をまとめて収集（プロジェクト用）
+│   └── download_images.py        取得済み CSV から画像をまとめて保存（プロジェクト用）
 ├── sample_data/
 │   ├── posts_sample.csv          合成サンプル投稿（3話題×122件．実在の投稿ではない）
 │   └── labeled_sample.csv        合成サンプルにラベル（4分類）を付けたもの
@@ -85,7 +86,8 @@ sns_analysis/
 | `get_replies(post_uri)` | 投稿への返信スレッド |
 | `jetstream_collect(seconds, keyword)` | リアルタイムに流れる投稿を観測 |
 | `save_posts(df, path)` / `load_posts(path)` | CSV 保存（取得条件のメモ付き）・読み込み |
-| `download_images(df, out_dir, max_posts)` | 投稿画像の保存 |
+| `download_images(df, out_dir, max_posts, size, all_images)` | 投稿画像の保存（最大4枚／投稿，thumb / fullsize，代替テキスト・サイズ付きの一覧 `images.csv`） |
+| `show_images(images, n, cols, caption)` | 保存した画像を格子状に表示 |
 | `tokenize(text, preset, extra_stopwords, ...)` | 日本語の形態素解析．前処理はプリセット（`content` / `nouns` / `nouns_adj` / `raw`）と個別オプション（品詞，細分類除外，短いひらがな，ストップワード）で切り替え |
 | `explain_tokens(text, preset, ...)` | 1文の各語が残ったか・落ちた理由を表で表示（前処理の確認用） |
 | `load_stopwords()` / `STOPWORDS_PATH` | `stopwords_ja.txt`（1行1語）を読み直す |
@@ -101,6 +103,8 @@ python scripts/collect_posts.py --query 防災 --max 1000 --out data/bosai.csv
 python scripts/collect_posts.py --query 防災 --query 観光 --max 500 --out data/posts.csv
 python scripts/collect_posts.py --query 防災 --method period --days 7 --window 6 --out data/bosai.csv
 python scripts/collect_posts.py --author chunichi.bsky.social --max 300 --out data/chunichi.csv
+python scripts/download_images.py --csv data/posts.csv --out data/images --max-posts 100          # 画像をまとめて保存
+python scripts/download_images.py --csv data/posts.csv --query 観光 --size fullsize --max-posts 50
 ```
 
 ## ログインなし／ありの違い
