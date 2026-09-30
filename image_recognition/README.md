@@ -110,7 +110,7 @@ python scripts/hand_gesture.py                                        # 手の3D
 | 姿勢・動作を評価する（フォーム，作業，リハビリ） | MediaPipe Pose の関節角度 → 時系列 |
 | 手の動き・ジェスチャで操作する | MediaPipe Hands（`hand_gesture.py`） |
 | 顔の向き・注意の推定 | MediaPipe Face Mesh / dlib / 視線推定（advanced） |
-| SNS の投稿画像に何が写っているかを集計する | SNS分析テーマの取得画像 → `yolo_detect.py` |
+| （参考・要相談）SNS の投稿画像に何が写っているかを集計する | SNS分析テーマの参考資料で取得した画像 → `yolo_detect.py`（センシティブな画像を含むことがあるため教員に相談） |
 
 ## 注意
 

@@ -14,12 +14,20 @@ SNS「Bluesky」の API から投稿（本文・日時・反応数・画像）�
 
 | 回 | Notebook | 内容 |
 |---|---|---|
-| 第2回 | [01_bluesky_collection.ipynb](01_bluesky_collection.ipynb) | アカウント設定，キーワード検索，反応順・ハッシュタグ，cursor・期間分割で大量取得，アカウントの投稿，返信スレッド，CSV保存と取得条件の記録，画像ダウンロード（複数枚・代替テキスト・縮小版と原寸・一覧表示・スクリプト），Jetstream |
+| 第2回 | [01_bluesky_collection.ipynb](01_bluesky_collection.ipynb) | アカウント設定，キーワード検索，反応順・ハッシュタグ，cursor・期間分割で大量取得，アカウントの投稿，返信スレッド，CSV保存と取得条件の記録，画像付き投稿の割合，Jetstream |
 | 第3回 | [02_text_visualization.ipynb](02_text_visualization.ipynb) | 形態素解析（janome），前処理の切り替え（品詞・細分類・ひらがな・ストップワードのプリセット），頻出語，ワードクラウド，日別・時間帯別の投稿数，語の推移，反応数の分布，共起ネットワーク，TF-IDF による特徴語比較 |
-| 第4回 | [03_machine_learning.ipynb](03_machine_learning.ipynb) | 教師あり分類（学習・評価・根拠の確認），自分でラベル付けしたデータからの分類器作成と全投稿への適用，K-means クラスタリング，YOLOv5 による投稿画像の物体検出 |
+| 第4回 | [03_machine_learning.ipynb](03_machine_learning.ipynb) | 教師あり分類（学習・評価・根拠の確認），自分でラベル付けしたデータからの分類器作成と全投稿への適用，K-means クラスタリング（参考：YOLOv5 による投稿画像の物体検出） |
 
 演習は **課題ではありません**．上から順に実行して結果を確認し，検索語やパラメータを変えて挙動を観察してください．
 API に接続できない場合は `sample_data/`（授業用の合成データ）が自動で使われます．
+
+### 参考資料（本編では扱わない）
+
+| Notebook | 内容 |
+|---|---|
+| [reference/image_download.ipynb](reference/image_download.ipynb) | 投稿画像のダウンロード（複数枚，代替テキスト，縮小版と原寸，一覧表示，`scripts/download_images.py`） |
+
+> **SNS の画像にはセンシティブな内容（性的・暴力的・不快な画像）が含まれることが分かっています．** そのため画像のダウンロードは授業の本編から外し，参考資料としています．画像を扱うプロジェクトを行う場合は教員に相談し，参考資料の注意事項（モデレーション／自己申告ラベル付き投稿の除外，少量からの目視確認，公式アカウントへの限定，再配布禁止）に従ってください．
 
 ## 事前準備
 
@@ -60,9 +68,11 @@ sns_analysis/
 ├── stopwords_ja.txt              ストップワード（1行1語．自由に追加・削除）
 ├── bsky_config.example.ini       アカウント設定の雛形（コピーして bsky_config.ini を作る）
 ├── bsky_config.ini               自分のハンドル名とアプリパスワード（Git 管理外）
+├── reference/
+│   └── image_download.ipynb      【参考】投稿画像のダウンロード（本編では扱わない）
 ├── scripts/
 │   ├── collect_posts.py          ターミナルから投稿をまとめて収集（プロジェクト用）
-│   └── download_images.py        取得済み CSV から画像をまとめて保存（プロジェクト用）
+│   └── download_images.py        【参考】取得済み CSV から画像をまとめて保存
 ├── sample_data/
 │   ├── posts_sample.csv          合成サンプル投稿（3話題×122件．実在の投稿ではない）
 │   └── labeled_sample.csv        合成サンプルにラベル（4分類）を付けたもの
@@ -86,8 +96,8 @@ sns_analysis/
 | `get_replies(post_uri)` | 投稿への返信スレッド |
 | `jetstream_collect(seconds, keyword)` | リアルタイムに流れる投稿を観測 |
 | `save_posts(df, path)` / `load_posts(path)` | CSV 保存（取得条件のメモ付き）・読み込み |
-| `download_images(df, out_dir, max_posts, size, all_images)` | 投稿画像の保存（最大4枚／投稿，thumb / fullsize，代替テキスト・サイズ付きの一覧 `images.csv`） |
-| `show_images(images, n, cols, caption)` | 保存した画像を格子状に表示 |
+| `download_images(df, out_dir, max_posts, size, all_images, skip_labeled)` | 【参考】投稿画像の保存（最大4枚／投稿，thumb / fullsize，一覧 `images.csv`）．ラベル付き投稿は既定で除外 |
+| `show_images(images, n, cols, caption)` | 【参考】保存した画像を格子状に表示 |
 | `tokenize(text, preset, extra_stopwords, ...)` | 日本語の形態素解析．前処理はプリセット（`content` / `nouns` / `nouns_adj` / `raw`）と個別オプション（品詞，細分類除外，短いひらがな，ストップワード）で切り替え |
 | `explain_tokens(text, preset, ...)` | 1文の各語が残ったか・落ちた理由を表で表示（前処理の確認用） |
 | `load_stopwords()` / `STOPWORDS_PATH` | `stopwords_ja.txt`（1行1語）を読み直す |
@@ -146,5 +156,5 @@ python scripts/download_images.py --csv data/posts.csv --query 観光 --size ful
 | ある社会課題について，人々の不満・要望を把握する | 期間分割取得 → 形態素解析 → 自分でラベル付け（要望/苦情/情報…）→ 分類器で全投稿に適用 → 割合と推移 |
 | 出来事（災害・イベント・発表）の前後で話題がどう変わったか | since/until で期間を分けて取得 → TF-IDF の特徴語比較 → 語の推移グラフ |
 | 自治体・企業の発信がどう受け取られているか | `get_author_posts` → 反応数の分析 → `get_replies` で返信の分類 |
-| 地域の観光・食の話題を画像から捉える | 画像付き投稿の取得 → YOLO で物体集計 → テキストと結合 |
+| （参考・要相談）地域の観光・食の話題を画像から捉える | 参考資料の手順で画像付き投稿を取得（ラベル付き除外・目視確認）→ YOLO で物体集計 → テキストと結合 |
 | 投稿の量やスピードから盛り上がりを測る | Jetstream で一定時間観測 → 語の出現頻度 |

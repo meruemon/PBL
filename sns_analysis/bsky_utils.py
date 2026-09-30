@@ -283,6 +283,11 @@ def post_to_row(post: dict, query: str = "") -> dict:
         "reply_count": int(post.get("replyCount") or 0),
         "quote_count": int(post.get("quoteCount") or 0),
         "image_count": len(images),
+        # モデレーション／投稿者自身が付けたラベル（porn, sexual, nudity, graphic-media など）．
+        # 付いていれば，画像はセンシティブな可能性が高い．download_images() は既定で除外する．
+        "labels": ",".join(sorted({l.get("val", "") for l in (post.get("labels") or [])} |
+                                  {l.get("val", "") for l in ((record.get("labels") or {}).get("values") or [])}
+                                  - {""})),
         "image_urls": "|".join((im.get("fullsize") or im.get("thumb") or "") for im in images),
         "image_thumbs": "|".join((im.get("thumb") or "") for im in images),
         "image_alts": "|".join((im.get("alt") or "").replace("|", " ") for im in images),
@@ -557,13 +562,17 @@ def clean_text(text: str) -> str:
 
 def download_images(df: pd.DataFrame, out_dir: str | Path = "data/images", max_posts: int = 30,
                     size: str = "thumb", all_images: bool = True, max_images: int | None = None,
-                    pause: float = 0.3, verbose: bool = True) -> pd.DataFrame:
-    """画像付き投稿の画像を保存し，1枚1行の表（post_id, image_index, image_path, alt, width, height, bytes）を返す．
+                    skip_labeled: bool = True, pause: float = 0.3, verbose: bool = True) -> pd.DataFrame:
+    """【参考資料】画像付き投稿の画像を保存し，1枚1行の表（post_id, image_index, image_path, alt, width, height, bytes）を返す．
 
-    max_posts  : 画像を取りに行く投稿数の上限（投稿の並び順で先頭から）
-    size       : "thumb"（長辺 1000px 程度・数十KB．分析用途はこれで十分）または "fullsize"（最大 2000px・数百KB）
-    all_images : True なら投稿に付いた画像を全部（最大4枚），False なら1枚目だけ
-    max_images : 保存する総枚数の上限（None なら無制限）
+    注意: SNS の画像にはセンシティブな内容（性的・暴力的・不快な画像）が含まれることがある．
+          授業の本編では扱わない．使う場合は教員に相談し，少量から確認しながら進めること．
+    max_posts    : 画像を取りに行く投稿数の上限（投稿の並び順で先頭から）
+    size         : "thumb"（長辺 1000px 程度・数十KB．分析用途はこれで十分）または "fullsize"（最大 2000px・数百KB）
+    all_images   : True なら投稿に付いた画像を全部（最大4枚），False なら1枚目だけ
+    max_images   : 保存する総枚数の上限（None なら無制限）
+    skip_labeled : True なら，モデレーション／自己申告のラベル（porn, sexual, nudity, graphic-media 等）が
+                   付いた投稿を除外する．ラベルが無くてもセンシティブな画像はあり得るので過信しない．
     * 画像は webp 形式で届くので JPEG に変換して保存する．ファイル名は {post_id}_{番号}.jpg
     * すでに保存済みのファイルは再取得しない（何度実行してもよい）
     * 一覧を out_dir/images.csv に書き出す（第4回の物体検出で使う）
@@ -574,7 +583,13 @@ def download_images(df: pd.DataFrame, out_dir: str | Path = "data/images", max_p
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     col = "image_thumbs" if size == "thumb" else "image_urls"
-    target = df[df["image_count"].fillna(0) > 0].head(max_posts)
+    target = df[df["image_count"].fillna(0) > 0]
+    if skip_labeled and "labels" in target.columns:
+        labeled = target["labels"].fillna("").astype(str).str.strip() != ""
+        if verbose and int(labeled.sum()):
+            print(f"  ラベル付き（センシティブの可能性）の投稿 {int(labeled.sum())} 件を除外しました．")
+        target = target[~labeled]
+    target = target.head(max_posts)
     rows, n_new, n_fail = [], 0, 0
     for _, row in target.iterrows():
         urls = [u for u in str(row.get(col, "") or "").split("|") if u]

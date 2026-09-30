@@ -11,7 +11,8 @@
 | **② SNS分析** | SNS（Bluesky）から投稿文と画像を集め，話題・反応・時間変化を分析する | Bluesky API，janome，scikit-learn，YOLOv5 |
 
 どちらのテーマも **「データ取得 → 加工・可視化 → 機械学習・深層学習」** の3回の基礎演習で道具を身につけ，その後の10回でプロジェクトを行います．
-2つのテーマは組み合わせても構いません（例：SNSの投稿画像に物体検出をかける）．
+2つのテーマは組み合わせても構いません（例：SNSで見つけた困りごとの現場をカメラで計測する）．
+※ SNS の投稿画像のダウンロードは，センシティブな画像を含むことがあるため本編では扱わず，参考資料としています（`sns_analysis/reference/`）．
 
 ---
 
@@ -91,7 +92,8 @@ PBL2026/
 │   ├── bsky_config.example.ini   ← アカウント設定の雛形（コピーして bsky_config.ini を作る）
 │   ├── 01_bluesky_collection.ipynb   ← 第2回：投稿・アカウント・返信・画像の取得
 │   ├── 02_text_visualization.ipynb   ← 第3回：形態素解析，頻出語，時系列，共起，TF-IDF
-│   ├── 03_machine_learning.ipynb     ← 第4回：分類器の学習・適用，クラスタリング，画像の物体検出
+│   ├── 03_machine_learning.ipynb     ← 第4回：分類器の学習・適用，クラスタリング（参考：画像の物体検出）
+│   ├── reference/                ← 参考資料（投稿画像のダウンロード．本編では扱わない）
 │   ├── scripts/collect_posts.py  ← ターミナルから投稿をまとめて収集
 │   ├── sample_data/              ← API に接続できないときの合成サンプル
 │   └── data/                     ← 取得したデータ置き場（Git管理外）
