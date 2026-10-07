@@ -524,11 +524,11 @@ def save_posts(df: pd.DataFrame, path: str | Path = "data/posts.csv", note: str 
     return path
 
 
-def load_posts(path: str | Path = "data/posts.csv") -> pd.DataFrame:
-    """save_posts で保存した CSV を読み込む．無ければサンプルデータを読む．"""
+def load_posts(path: str | Path = "data/posts.csv", sample: str = "posts_sample.csv") -> pd.DataFrame:
+    """save_posts で保存した CSV を読み込む．無ければ sample_data/ のサンプルデータ（sample で指定）を読む．"""
     path = Path(path)
     if not path.exists():
-        sample = Path(__file__).parent / "sample_data" / "posts_sample.csv"
+        sample = Path(__file__).parent / "sample_data" / sample
         print(f"{path} が見つからないので，サンプルデータ {sample.name} を読み込みます．")
         path = sample
     df = pd.read_csv(path, encoding="utf-8-sig")
@@ -850,6 +850,69 @@ def tokenize(text: str, preset: str = "content", pos=None, stopwords=None, extra
     return words
 
 
+# ----------------------------------------------------------------------
+# 英語テキスト処理（英語圏の投稿を分析するとき）
+#   英語は空白で単語が区切られるので形態素解析は不要．小文字化 → 記号除去 → ストップワード で十分実用になる．
+# ----------------------------------------------------------------------
+
+STOPWORDS_EN_PATH = Path(__file__).resolve().parent / "stopwords_en.txt"
+BUILTIN_STOPWORDS_EN = {
+    "the", "a", "an", "and", "or", "but", "of", "to", "in", "on", "at", "for", "with", "by", "from", "as",
+    "is", "are", "was", "were", "be", "been", "being", "it", "its", "this", "that", "these", "those",
+    "i", "you", "he", "she", "we", "they", "me", "him", "her", "us", "them", "my", "your", "his", "our", "their",
+    "not", "no", "so", "if", "than", "then", "there", "here", "what", "which", "who", "how", "when", "where",
+    "do", "does", "did", "have", "has", "had", "will", "would", "can", "could", "should", "just", "about",
+    "http", "https", "www", "com", "rt", "via", "amp",
+}
+_EN_WORD_RE = re.compile(r"[a-z][a-z'\-]+")
+_HASHTAG_RE = re.compile(r"#\w+")
+
+
+def load_stopwords_en(path: str | Path = STOPWORDS_EN_PATH) -> set[str]:
+    """英語ストップワードファイル（1行1語，# はコメント）を読み込む．無ければ内蔵の最小セットを返す．"""
+    words = set(BUILTIN_STOPWORDS_EN)
+    path = Path(path)
+    if path.exists():
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.split("#", 1)[0].strip().lower()
+            if line:
+                words.add(line)
+    return words
+
+
+DEFAULT_STOPWORDS_EN = load_stopwords_en()
+
+
+def tokenize_en(text: str, stopwords=None, extra_stopwords=(), min_len: int = 3,
+                keep_hashtags: bool = True) -> list[str]:
+    """英語の文を単語のリストにする．
+
+    * 小文字化し，URL・メンションを除き，英字の語（アポストロフィ・ハイフン可）だけ取り出す
+    * ストップワード（stopwords_en.txt ＋ extra_stopwords）と min_len 文字未満の語を落とす
+    * keep_hashtags=True ならハッシュタグは '#' 付きのまま1語として残す（話題の目印になる）
+    """
+    sw = set(DEFAULT_STOPWORDS_EN if stopwords is None else stopwords) | set(extra_stopwords or ())
+    text = clean_text(text).lower()
+    words = []
+    if keep_hashtags:
+        words.extend(_HASHTAG_RE.findall(text))
+        text = _HASHTAG_RE.sub(" ", text)
+    for w in _EN_WORD_RE.findall(text):
+        w = w.strip("'-")
+        if len(w) < min_len or w in sw:
+            continue
+        words.append(w)
+    return words
+
+
+def tokenize_any(text: str, **options) -> list[str]:
+    """日本語文字を含めば tokenize()，含まなければ tokenize_en() を使う（日英混在データ用）．"""
+    if _JP_RE.search(str(text)):
+        return tokenize(text, **{k: v for k, v in options.items() if k in
+                                 ("preset", "pos", "stopwords", "extra_stopwords", "min_len", "max_hiragana_len", "exclude_detail")})
+    return tokenize_en(text, **{k: v for k, v in options.items() if k in ("stopwords", "extra_stopwords", "min_len", "keep_hashtags")})
+
+
 def explain_tokens(text: str, preset: str = "content", **options) -> pd.DataFrame:
     """1文について，各トークンが「残った／落ちた（理由）」を表で返す（前処理の効果を確かめる用）．"""
     opt = _resolve_options(preset, options.get("pos"), options.get("stopwords"), options.get("extra_stopwords", ()),
@@ -896,6 +959,7 @@ __all__ = [
     "search_posts", "search_posts_by_period", "search_posts_paged", "get_profile", "search_actors", "get_author_posts",
     "get_replies", "get_trending_topics", "save_posts", "load_posts", "anonymize", "clean_text",
     "download_images", "show_images", "jetstream_collect", "tokenize", "explain_tokens", "load_stopwords",
+    "tokenize_en", "tokenize_any", "load_stopwords_en", "DEFAULT_STOPWORDS_EN", "STOPWORDS_EN_PATH",
     "DEFAULT_STOPWORDS", "TOKENIZE_PRESETS", "EXCLUDE_DETAIL_DEFAULT", "STOPWORDS_PATH",
     "japanese_font_path", "set_japanese_font", "posts_to_dataframe", "add_datetime_columns",
     "stable_hash", "login", "login_from_config", "login_status", "logout", "load_config",
