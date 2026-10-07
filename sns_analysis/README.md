@@ -16,10 +16,11 @@ SNS「Bluesky」の API から投稿（本文・日時・反応数・画像）�
 |---|---|---|
 | 第2回 | [01_bluesky_collection.ipynb](01_bluesky_collection.ipynb) | アカウント設定，キーワード検索，反応順・ハッシュタグ，cursor・期間分割で大量取得，アカウントの投稿，返信スレッド，CSV保存と取得条件の記録，画像付き投稿の割合，Jetstream |
 | 第3回 | [02_text_visualization.ipynb](02_text_visualization.ipynb) | 形態素解析（janome），前処理の切り替え（品詞・細分類・ひらがな・ストップワードのプリセット），頻出語，ワードクラウド，日別・時間帯別の投稿数，語の推移，反応数の分布，共起ネットワーク，TF-IDF による特徴語比較 |
-| 第4回 | [03_machine_learning.ipynb](03_machine_learning.ipynb) | 教師あり分類（学習・評価・根拠の確認），自分でラベル付けしたデータからの分類器作成と全投稿への適用，K-means クラスタリング（参考：YOLOv5 による投稿画像の物体検出） |
+| 第4回 | [03_machine_learning.ipynb](03_machine_learning.ipynb) | 教師あり分類（学習・評価・根拠の確認），自分でラベル付けしたデータからの分類器作成と全投稿への適用，K-means クラスタリング，発展：学習済みモデルによる感情分析（日本語・多言語） |
+| 発展 | [04_english_analysis.ipynb](04_english_analysis.ipynb) | 英語圏の投稿の分析（世界情勢）：言語指定の検索，トレンド，英語の前処理（`tokenize_en`），頻出語・TF-IDF，UTC での時間変化，国・地域の言及数，同じ話題の日英比較，報道機関の投稿 |
 
 演習は **課題ではありません**．上から順に実行して結果を確認し，検索語やパラメータを変えて挙動を観察してください．
-API に接続できない場合は `sample_data/`（授業用の合成データ）が自動で使われます．
+API に接続できない場合は `sample_data/`（授業用の合成データ．日本語 `posts_sample.csv`，英語 `posts_sample_en.csv`）が自動で使われます．
 
 ### 参考資料（本編では扱わない）
 
@@ -64,8 +65,10 @@ jupyter notebook
 ```
 sns_analysis/
 ├── 01_bluesky_collection.ipynb / 02_text_visualization.ipynb / 03_machine_learning.ipynb
+├── 04_english_analysis.ipynb     発展：英語圏の投稿の分析（世界情勢）
 ├── bsky_utils.py                 取得・保存・前処理の共通モジュール（Notebook から import）
-├── stopwords_ja.txt              ストップワード（1行1語．自由に追加・削除）
+├── stopwords_ja.txt              日本語ストップワード（1行1語．自由に追加・削除）
+├── stopwords_en.txt              英語ストップワード（同上）
 ├── bsky_config.example.ini       アカウント設定の雛形（コピーして bsky_config.ini を作る）
 ├── bsky_config.ini               自分のハンドル名とアプリパスワード（Git 管理外）
 ├── reference/
@@ -75,6 +78,7 @@ sns_analysis/
 │   └── download_images.py        【参考】取得済み CSV から画像をまとめて保存
 ├── sample_data/
 │   ├── posts_sample.csv          合成サンプル投稿（3話題×122件．実在の投稿ではない）
+│   ├── posts_sample_en.csv       英語の合成サンプル投稿（2話題×120件．実在の投稿ではない）
 │   └── labeled_sample.csv        合成サンプルにラベル（4分類）を付けたもの
 └── data/                         取得データ置き場（Git 管理外）
     ├── posts.csv / posts.meta.json
@@ -100,6 +104,8 @@ sns_analysis/
 | `show_images(images, n, cols, caption)` | 【参考】保存した画像を格子状に表示 |
 | `tokenize(text, preset, extra_stopwords, ...)` | 日本語の形態素解析．前処理はプリセット（`content` / `nouns` / `nouns_adj` / `raw`）と個別オプション（品詞，細分類除外，短いひらがな，ストップワード）で切り替え |
 | `explain_tokens(text, preset, ...)` | 1文の各語が残ったか・落ちた理由を表で表示（前処理の確認用） |
+| `tokenize_en(text, extra_stopwords, keep_hashtags)` | 英語の前処理（小文字化・記号除去・`stopwords_en.txt`） |
+| `tokenize_any(text, ...)` | 日本語文字を含めば `tokenize`，含まなければ `tokenize_en`（日英混在データ用） |
 | `load_stopwords()` / `STOPWORDS_PATH` | `stopwords_ja.txt`（1行1語）を読み直す |
 | `anonymize(df)` | 発表用に投稿者・URL列を落とす |
 | `set_japanese_font()` / `japanese_font_path()` | グラフ・ワードクラウドの日本語フォント |
@@ -156,5 +162,5 @@ python scripts/download_images.py --csv data/posts.csv --query 観光 --size ful
 | ある社会課題について，人々の不満・要望を把握する | 期間分割取得 → 形態素解析 → 自分でラベル付け（要望/苦情/情報…）→ 分類器で全投稿に適用 → 割合と推移 |
 | 出来事（災害・イベント・発表）の前後で話題がどう変わったか | since/until で期間を分けて取得 → TF-IDF の特徴語比較 → 語の推移グラフ |
 | 自治体・企業の発信がどう受け取られているか | `get_author_posts` → 反応数の分析 → `get_replies` で返信の分類 |
-| （参考・要相談）地域の観光・食の話題を画像から捉える | 参考資料の手順で画像付き投稿を取得（ラベル付き除外・目視確認）→ YOLO で物体集計 → テキストと結合 |
-| 投稿の量やスピードから盛り上がりを測る | Jetstream で一定時間観測 → 語の出現頻度 |
+| 世界の出来事（選挙・紛争・気候・国際スポーツ）への反応を，日本と世界で比べる | `04_english_analysis.ipynb`：英語で収集 → `tokenize_en` → 国・地域の言及数，UTC の時間変化 → 日本語の同じ話題と比較（多言語の感情分析モデルで同じ基準に） |
+| 投稿がポジティブかネガティブか | 学習済みモデル（03 の 4 節） |
