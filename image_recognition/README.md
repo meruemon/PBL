@@ -66,7 +66,7 @@ image_recognition/
 !python export.py --weights yolov5s.pt --opset 12 --include onnx
 ```
 
-参考：[YOLOv5 公式リポジトリ](https://github.com/ultralytics/yolov5)，[モデルエクスポートの解説（日本語）](https://docs.ultralytics.com/ja/yolov5/tutorials/model_export/)
+参考：[YOLOv5 公式リポジトリ](https://github.com/ultralytics/yolov5)，[日本語チュートリアル](https://docs.ultralytics.com/ja/yolov5)，[モデルエクスポートの解説（日本語）](https://docs.ultralytics.com/ja/yolov5/tutorials/model_export)
 
 ## フォルダ構成
 
