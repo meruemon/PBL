@@ -14,7 +14,7 @@ SNS「Bluesky」の API から投稿（本文・日時・反応数・画像）�
 
 | 回 | Notebook | 内容 |
 |---|---|---|
-| 第2回 | [01_bluesky_collection.ipynb](01_bluesky_collection.ipynb) | アカウント設定，キーワード検索，反応順・ハッシュタグ，cursor・期間分割で大量取得，アカウントの投稿，返信スレッド，CSV保存と取得条件の記録，画像付き投稿の割合，Jetstream |
+| 第2回 | [01_bluesky_collection.ipynb](01_bluesky_collection.ipynb) | アカウント設定，キーワード検索，反応順・ハッシュタグ，cursor・期間分割で大量取得，アカウントの投稿，返信スレッド，CSV保存と取得条件の記録，画像付き投稿の割合，Jetstream，**企画前の検索語の下見（データの量と質）** |
 | 第3回 | [02_text_visualization.ipynb](02_text_visualization.ipynb) | 形態素解析（janome），前処理の切り替え（品詞・細分類・ひらがな・ストップワードのプリセット），頻出語，ワードクラウド，日別・時間帯別の投稿数，語の推移，反応数の分布，共起ネットワーク，TF-IDF による特徴語比較 |
 | 第4回 | [03_machine_learning.ipynb](03_machine_learning.ipynb) | 教師あり分類（学習・評価・根拠の確認），自分でラベル付けしたデータからの分類器作成と全投稿への適用，K-means クラスタリング，発展：学習済みモデルによる感情分析（日本語・多言語） |
 | 発展 | [04_english_analysis.ipynb](04_english_analysis.ipynb) | 英語圏の投稿の分析（世界情勢）：言語指定の検索，トレンド，英語の前処理（`tokenize_en`），頻出語・TF-IDF，UTC での時間変化，国・地域の言及数，同じ話題の日英比較，報道機関の投稿 |
@@ -94,6 +94,7 @@ sns_analysis/
 | `login_status()` | ログインできているかを表示 |
 | `search_posts(query, limit, sort, lang, since, until)` | キーワード検索（1回最大100件） |
 | `search_posts_paged(query, max_posts, since, until)` | cursor で続きを連続取得（標準の大量取得．要ログイン） |
+| `preview_query(query)` / `preview_queries([...])` | 企画前の下見：候補の検索語ごとに件数／日・投稿者の偏り・リンク付き・重複・本文長を表にする |
 | `search_posts_by_period(query, days, hours_per_window)` | 期間を分割して取得（ログインなしでも動く） |
 | `search_actors(query)` / `get_profile(handle)` | アカウント検索・プロフィール |
 | `get_author_posts(handle, max_posts)` | 特定アカウントの投稿 |
@@ -155,7 +156,22 @@ python scripts/download_images.py --csv data/posts.csv --query 観光 --size ful
 - 発表資料にはハンドル名・投稿URL・画像そのものを原則載せず，集計結果・匿名化した例で示す（`anonymize()`）．
 - 投稿から性別・病歴などのセンシティブな属性を推定・分類しない．
 
+## 日本語データの量と質について（企画の前に必ず読む）
+
+**Bluesky の日本語投稿は X（旧Twitter）より少なく，話題によってはデータが集まらない・ニュース転載や bot に偏る・定型投稿ばかり，ということがよくあります**（うまくいく話題もあります）．そのため，テーマを決める前に候補の検索語を **小さく取得して量と質を確かめる「下見」** を必ず行ってください（第2回 Notebook の 11 節，`preview_queries([候補1, 候補2, ...])`）．
+
+| 下見で分かること | 目安 | 集まらないときの手 |
+|---|---|---|
+| 1日あたりの件数 | 50件以上なら十分，10件未満は少ない | 同義語を足す，期間を長く取る，英語圏を含める（`04_english_analysis.ipynb`） |
+| 投稿者の偏り（最多投稿者の占有率） | 30%以上は bot・ニュース転載の疑い | その投稿者を除外，返信（人の声）を使う |
+| リンク付きの割合 | 60%以上はニュース見出しの転載が中心 | リンク付きを除外，公式アカウントの発信と返信の分析に問いを変える |
+| 重複本文の割合 | 30%以上は定型投稿 | 重複除去後の件数で判断 |
+
+「データが無い」と分かることも下見の成果です．その場合は問いをデータがある形（公式発信と反応，英語圏との比較，特定の出来事への返信）に変えるか，テーマを変えてください．
+
 ## プロジェクトで使える道具の組み合わせ（例）
+
+以下は **下見で量・質を確認できた場合** の例です．
 
 | やりたいこと | 道具 |
 |---|---|

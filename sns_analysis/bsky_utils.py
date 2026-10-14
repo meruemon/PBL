@@ -391,6 +391,73 @@ def search_posts_paged(query: str, max_posts: int = 500, lang: str | None = "ja"
     return df
 
 
+def preview_query(query: str, lang: str | None = "ja", max_posts: int = 300, show: bool = True) -> dict:
+    """企画の前に検索語を「下見」する：どれくらいの量・質のデータが集まりそうかを数分で確かめる．
+
+    Bluesky の日本語投稿は X（旧Twitter）より少なく，話題によっては
+    ・件数が少ない（1日に数件〜数十件）
+    ・ニュースの見出し転載や bot，宣伝が大半を占める
+    ・同じ文面の繰り返し（定型投稿）が多い
+    ことがある．うまくいく話題もあるので，候補の検索語をこの関数で比べてから企画を決める．
+
+    返り値（dict）：件数，対象期間，1日あたりの件数（推定），投稿者数，最多投稿者の占有率，
+                    リンク付き（ニュース転載の目安）の割合，重複本文の割合，本文の長さの中央値，画像付き割合
+    """
+    df = search_posts_paged(query, max_posts=max_posts, lang=lang,
+                            japanese_only=(lang == "ja"), verbose=False)
+    out = {"query": query, "lang": lang or "all", "posts": int(len(df))}
+    if len(df) == 0:
+        out.update({"posts_per_day": 0.0, "verdict": "投稿が見つかりません．別の語（同義語・英語）を試す"})
+        if show:
+            print(f"[{query}] 投稿が見つかりません．別の語（同義語・英語）を試してください．")
+        return out
+    ts = df["created_at_jst"].dropna()
+    span_days = max((ts.max() - ts.min()).total_seconds() / 86400, 1 / 24)
+    per_day = len(df) / span_days
+    texts = df["text"].fillna("").map(clean_text)
+    top_author_share = df["author_id"].value_counts(normalize=True).iloc[0]
+    out.update({
+        "oldest": str(ts.min())[:16], "newest": str(ts.max())[:16],
+        "span_days": round(span_days, 1), "posts_per_day": round(per_day, 1),
+        "authors": int(df["author_id"].nunique()),
+        "top_author_share": round(float(top_author_share), 2),
+        "with_link_share": round(float((df["external_url"].fillna("") != "").mean()), 2),
+        "duplicate_share": round(float(texts.duplicated().mean()), 2),
+        "median_length": int(texts.str.len().median()),
+        "with_image_share": round(float((df["image_count"].fillna(0) > 0).mean()), 2),
+    })
+    notes = []
+    if per_day >= 50:
+        notes.append("量は十分（1日50件以上）")
+    elif per_day >= 10:
+        notes.append("量は少なめ（期間を長めに取る・同義語を足す）")
+    else:
+        notes.append("量が少ない（別の語・英語圏（lang='en'）・公式アカウントの投稿も検討）")
+    if top_author_share >= 0.3:
+        notes.append(f"特定の投稿者が{int(top_author_share * 100)}%を占める（bot・ニュース転載の可能性）")
+    if out["with_link_share"] >= 0.6:
+        notes.append("リンク付きが多い（ニュース見出しの転載が中心かも．『人の声』は少ない）")
+    if out["duplicate_share"] >= 0.3:
+        notes.append("同じ本文の繰り返しが多い（定型投稿．重複を除くと件数が減る）")
+    if out["median_length"] < 20:
+        notes.append("本文が短い（語の分析には不向きかも）")
+    out["verdict"] = "／".join(notes)
+    if show:
+        print(f"[{query}] {len(df)}件（{out['oldest']} 〜 {out['newest']}，約{out['posts_per_day']}件/日），"
+              f"投稿者{out['authors']}人，最多投稿者{int(top_author_share * 100)}%，リンク付き{int(out['with_link_share'] * 100)}%，"
+              f"重複{int(out['duplicate_share'] * 100)}%，本文の長さ中央値{out['median_length']}字")
+        print("   → " + out["verdict"])
+    return out
+
+
+def preview_queries(queries, lang: str | None = "ja", max_posts: int = 300) -> pd.DataFrame:
+    """複数の検索語候補を preview_query で下見し，比較表にして返す．"""
+    rows = [preview_query(q, lang=lang, max_posts=max_posts) for q in queries]
+    cols = ["query", "posts", "posts_per_day", "authors", "top_author_share", "with_link_share",
+            "duplicate_share", "median_length", "with_image_share", "verdict"]
+    return pd.DataFrame(rows).reindex(columns=cols)
+
+
 def search_posts_by_period(query: str, days: int = 7, hours_per_window: int = 24,
                            lang: str | None = "ja", sort: str = "latest",
                            japanese_only: bool = True, end: datetime | None = None,
@@ -956,7 +1023,7 @@ def set_japanese_font() -> str | None:
 
 
 __all__ = [
-    "search_posts", "search_posts_by_period", "search_posts_paged", "get_profile", "search_actors", "get_author_posts",
+    "search_posts", "search_posts_by_period", "search_posts_paged", "preview_query", "preview_queries", "get_profile", "search_actors", "get_author_posts",
     "get_replies", "get_trending_topics", "save_posts", "load_posts", "anonymize", "clean_text",
     "download_images", "show_images", "jetstream_collect", "tokenize", "explain_tokens", "load_stopwords",
     "tokenize_en", "tokenize_any", "load_stopwords_en", "DEFAULT_STOPWORDS_EN", "STOPWORDS_EN_PATH",

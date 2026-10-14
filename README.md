@@ -8,7 +8,7 @@
 | テーマ | 何ができるようになるか | 主な道具 |
 |---|---|---|
 | **① 画像認識** | カメラ映像から人・顔・物体を検出し，数えて，分析するアプリを作る | OpenCV，MediaPipe，YOLOv5 |
-| **② SNS分析** | SNS（Bluesky）から投稿文と画像を集め，話題・反応・時間変化を分析する | Bluesky API，janome，scikit-learn，YOLOv5 |
+| **② SNS分析** | SNS（Bluesky）から日本語・英語の投稿を集め，話題・反応・時間変化・感情を分析する | Bluesky API，janome，scikit-learn，学習済み言語モデル |
 
 どちらのテーマも **「データ取得 → 加工・可視化 → 機械学習・深層学習」** の3回の基礎演習で道具を身につけ，その後の10回でプロジェクトを行います．
 2つのテーマは組み合わせても構いません（例：SNSで見つけた困りごとの現場をカメラで計測する）．
@@ -24,10 +24,11 @@
 | 第2回 | 基礎演習① **データ取得** | [画像認識](image_recognition/01_image_basics.ipynb) / [SNS分析](sns_analysis/01_bluesky_collection.ipynb) |
 | 第3回 | 基礎演習② **データ加工・ビジュアライゼーション** | [画像認識](image_recognition/02_data_analysis.ipynb) / [SNS分析](sns_analysis/02_text_visualization.ipynb) |
 | 第4回 | 基礎演習③ **機械学習・深層学習**，グループ決定 | [画像認識](image_recognition/03_deep_learning.ipynb) / [SNS分析](sns_analysis/03_machine_learning.ipynb) |
-| 第5〜6回 | プロジェクト考案（ディスカッション，企画シート作成） | [企画シート](project/planning_sheet.md) |
-| 第7〜12回 | プロジェクト制作 | [プロジェクトガイド](docs/04_project_guide.md) |
+| 第5〜6回 | プロジェクト考案（ディスカッション，データの下見，企画シート作成） | [企画シート](project/planning_sheet.md) |
+| 第7回 | 冒頭に企画発表（1班10分）とフィードバック，制作開始 | [発表テンプレート](project/presentation_template.md) |
+| 第8〜12回 | プロジェクト制作 | [プロジェクトガイド](docs/04_project_guide.md) |
 | 第13回 | 発表練習 | [発表テンプレート](project/presentation_template.md) |
-| 第14回 | 合同プレゼンテーション会 | |
+| 第14回 | 合同プレゼンテーション会（提出物は発表スライド pptx のみ） | |
 
 ---
 
@@ -92,7 +93,8 @@ PBL2026/
 │   ├── bsky_config.example.ini   ← アカウント設定の雛形（コピーして bsky_config.ini を作る）
 │   ├── 01_bluesky_collection.ipynb   ← 第2回：投稿・アカウント・返信・画像の取得
 │   ├── 02_text_visualization.ipynb   ← 第3回：形態素解析，頻出語，時系列，共起，TF-IDF
-│   ├── 03_machine_learning.ipynb     ← 第4回：分類器の学習・適用，クラスタリング（参考：画像の物体検出）
+│   ├── 03_machine_learning.ipynb     ← 第4回：分類器の学習・適用，クラスタリング，発展：感情分析
+│   ├── 04_english_analysis.ipynb     ← 発展：英語圏の投稿の分析（世界情勢，日英比較）
 │   ├── reference/                ← 参考資料（投稿画像のダウンロード．本編では扱わない）
 │   ├── scripts/collect_posts.py  ← ターミナルから投稿をまとめて収集
 │   ├── sample_data/              ← API に接続できないときの合成サンプル

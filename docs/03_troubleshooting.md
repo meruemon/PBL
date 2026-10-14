@@ -59,6 +59,8 @@
 | ワードクラウドで `OSError: cannot open resource` | `japanese_font_path()` が `None`．上と同じくフォントを用意する |
 | `jetstream_collect` で `TimeoutError` や接続失敗 | 学内ネットワークが WebSocket を遮断している可能性．別のネットワークで試す．発展内容なので飛ばしてよい |
 | 形態素解析が遅い | 数千件なら数十秒．数万件なら `df.sample(5000)` で試してから全体に適用 |
+| 感情分析で `No module named 'transformers'` / `fugashi` | 発展用の追加ライブラリが未インストール．`pip install transformers torch fugashi unidic-lite sentencepiece`（500MB ほど） |
+| 感情分析のモデルのダウンロードが終わらない | 初回は数百MB〜1GB を取得する．学内 Wi‑Fi か自宅で，Google Colab を使うのも可（Notebook の 4 節） |
 | CSV を Excel で開くと文字化け | `utf-8-sig` で保存しているので通常は化けない．化ける場合は Excel の「データ → テキストから」で UTF-8 を指定 |
 
 ## それでも解決しないとき
