@@ -22,7 +22,7 @@
 | 第2回 | 基礎演習① **データ取得** | [画像認識](image_recognition/01_image_basics.ipynb) / [SNS分析](sns_analysis/01_bluesky_collection.ipynb) |
 | 第3回 | 基礎演習② **データ加工・ビジュアライゼーション** | [画像認識](image_recognition/02_data_analysis.ipynb) / [SNS分析](sns_analysis/02_text_visualization.ipynb) |
 | 第4回 | 基礎演習③ **機械学習・深層学習**，グループ決定 | [画像認識](image_recognition/03_deep_learning.ipynb) / [SNS分析](sns_analysis/03_machine_learning.ipynb) |
-| 第5〜6回 | プロジェクト考案（ディスカッション，データの下見，企画シート作成） | [企画シート](project/planning_sheet.md) |
+| 第5〜6回 | プロジェクト考案（ディスカッション，データの下見，企画シート作成） | [企画シート](project/planning_sheet.md)（記入用 [Word版](project/planning_sheet.docx)） |
 | 第7回 | 冒頭に企画発表（1班10分）とフィードバック，制作開始 | [発表テンプレート](project/presentation_template.md) |
 | 第8〜12回 | プロジェクト制作 | [プロジェクトガイド](docs/04_project_guide.md) |
 | 第13回 | 発表練習 | [発表テンプレート](project/presentation_template.md) |
@@ -98,7 +98,8 @@ PBL2026/
 │   ├── sample_data/              ← API に接続できないときの合成サンプル
 │   └── data/                     ← 取得したデータ置き場（Git管理外）
 └── project/
-    ├── planning_sheet.md         ← 企画シート（第5〜6回）
+    ├── planning_sheet.md         ← 企画シート（第5〜6回．閲覧用）
+    ├── planning_sheet.docx       ← 企画シート（記入用 Word 版）
     └── presentation_template.md  ← 最終発表の構成テンプレート
 ```
 
